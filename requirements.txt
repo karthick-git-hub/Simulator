@@ -1,0 +1,16 @@
+numpy>=1.22
+scipy<=1.10.1
+matplotlib
+dash>=1.20.0
+dash-core-components
+dash-html-components
+dash-bootstrap-components
+dash-table
+dash-cytoscape
+plotly
+pandas
+qutip>=4.6.0
+tqdm>=4.54.0
+networkx
+qiskit=0.45.1
+ply
