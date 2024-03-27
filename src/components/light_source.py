@@ -3,7 +3,7 @@
 This module defines the LightSource class to supply individual photons and the SPDCSource class to supply pre-entangled photons.
 These classes should be connected to one or two entities, respectively, that are capable of receiving photons.
 """
-
+from copy import deepcopy
 from typing import List
 
 from numpy import multiply, sqrt, zeros, kron, outer
@@ -109,8 +109,8 @@ class LightSource(Entity):
 
         # Start time is the current time with a period of 2 milliseconds.
         time = self.timeline.now()
-        period = int(round(1e12 / self.frequency))
-        process = Process(self._receivers[0], "custom_get", state_list)
+        photon_list = deepcopy(state_list)
+        process = Process(self._receivers[0], "custom_get", photon_list)
         event = Event(time, process)
         self.timeline.schedule(event)
         self.photon_counter += 1

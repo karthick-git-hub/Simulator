@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import numpy as np
 from qiskit import QuantumCircuit, Aer, execute
 
+import json
 from ..protocol import StackProtocol
 
 if TYPE_CHECKING:
@@ -31,6 +32,7 @@ class COWProtocol(StackProtocol):
     begin_counter = 0
     total_rounds = 0
     round_details = {}
+    round_number = 0
 
     def __init__(self, own: "QKDNode", name, lightsource, qsdetector):
         super().__init__(own, name)
@@ -100,14 +102,15 @@ class COWProtocol(StackProtocol):
 
     def push(self, key_num, rounds, run_time=np.inf):
         COWProtocol.begin_counter = 0
+        self.message_counter = 0
         COWProtocol.actual_alice_bits = []
         self.own.destination = self.another.own.name
         self.attach_to_detector()
         print(
             f"Total with vacuum: {len(COWProtocol.alice_bits_with_vacuum)} alice_bits_with_vacuum --  {COWProtocol.alice_bits_with_vacuum}  round -- {rounds}")
         lightsource = self.own.components[self.lightsource]
-        lightsource.custom_emit(COWProtocol.alice_bits_with_vacuum)
         alice_bits_with_vacuum_copy = deepcopy(COWProtocol.alice_bits_with_vacuum)
+        lightsource.custom_emit(alice_bits_with_vacuum_copy)
         for bit in alice_bits_with_vacuum_copy:
             if bit[0] != COWProtocol.decoy_sequence:
                 COWProtocol.actual_alice_bits.append((self.measure(bit[0]), bit[1]))
@@ -120,10 +123,8 @@ class COWProtocol(StackProtocol):
 
     def attach_to_detector(self):
         """Attach this protocol instance as an observer to a detector."""
-        print(f"Components in QKDNode: {self.own.components}")  # Debug: List all components
         if self.qsdetector in self.own.components:
             detector = self.own.components[self.qsdetector]
-            print(f"Retrieved component type: {type(detector)}")  # Debug: Check the type of the retrieved component
             if hasattr(detector, 'attach_observer'):
                 detector.attach_observer(self)
             else:
@@ -183,9 +184,6 @@ class COWProtocol(StackProtocol):
 
     def begin_classical_communication(self, detection_data):
         self.sifting_process(detection_data)
-        '''process = Process(self, "sifting_process", [detection_data])
-        event = Event(int(self.own.timeline.now()), process)
-        self.own.timeline.schedule(event)'''
 
     def sifting_process(self, detection_data):
         COWProtocol.sifting_percentage = []
@@ -231,6 +229,7 @@ class COWProtocol(StackProtocol):
 
         print(f"Same: {sameFlagValue}, Different: {differentFlagValue}")
         security_percentage  = (sameFlagValue / len(random_bits)) * 100 if sameFlagValue > 0 else 0
+        print(f"security_percentage: {security_percentage}")
 
         if len(COWProtocol.sifting_percentage) == 0:  # Check if sifting percentage is empty
             COWProtocol.sifting_percentage.append(security_percentage)
@@ -271,18 +270,20 @@ class COWProtocol(StackProtocol):
         matched_alice_bits = []
         matched_bob_bits = []
         COWProtocol.key_rate = 0
-
+        COWProtocol.round_number += 1
+        print(f"raw_key_alice {raw_key_alice} ")
+        print(f"raw_key_bob {raw_key_bob} ")
         def calculate_parity(bits):
             return "even" if sum(bits) % 2 == 0 else "odd"
         # Calculate parity for Alice's bits in blocks of 3
         for i in range(0, len(raw_key_alice), 3):
             alice_bits = [bit for bit, _ in raw_key_alice[i:i + 3]]
-            alice_parity = calculate_parity(alice_bits)
+            alice_parity = calculate_parity(alice_bits.copy())
             alice_parity_list.append(alice_parity)
         # Calculate parity for Bob's bits in blocks of 3
         for i in range(0, len(raw_key_bob), 3):
             bob_bits = [bit for bit, _ in raw_key_bob[i:i + 3]]
-            bob_parity = calculate_parity(bob_bits)
+            bob_parity = calculate_parity(bob_bits.copy())
             bob_parity_list.append(bob_parity)
 
         # Initialize match count
@@ -307,9 +308,6 @@ class COWProtocol(StackProtocol):
         print(f"Length: {len(matched_alice_bits)} Matched Alice bits: {matched_alice_bits}")
         print(f"Length: {len(matched_bob_bits)} Matched Bob bits:  {matched_bob_bits}")
         self.print_details()
-        '''process = Process(self, "print_details", [])
-        event = Event(int(self.own.timeline.now()), process)
-        self.own.timeline.schedule(event)'''
 
 
     def generate_random_bits(self, length):
@@ -332,7 +330,7 @@ class COWProtocol(StackProtocol):
 
 
     def print_details(self, file_name='round_details.txt'):
-        round_number = len(COWProtocol.round_details) + 1
+        round_number = COWProtocol.round_number
         details = {
             'sifting_percentage': COWProtocol.sifting_percentage[-1],
             'key_rate': COWProtocol.key_rate,
@@ -345,11 +343,9 @@ class COWProtocol(StackProtocol):
             file.write(f"Round {round_number}: ")
             file.write(json.dumps(details) + '\n')
 
-    def end_of_round(self, distance, file_name='round_details.txt', output_file='result.txt'):
+    def end_of_round(self, distance, num_rounds, file_name='round_details.txt', output_file='result.txt'):
         total_sifting_percentage = 0
         total_key_rate = 0
-        round_count = 0
-
         # Read and process each line in the input file
         with open(file_name, 'r') as file:
             for line in file:
@@ -358,14 +354,13 @@ class COWProtocol(StackProtocol):
                     detail_dict = json.loads(json_part)
                     total_sifting_percentage += detail_dict['sifting_percentage']
                     total_key_rate += detail_dict['key_rate']
-                    round_count += 1
                 except json.JSONDecodeError as e:
                     print(f"Error decoding JSON: {e}")
 
         # Calculate averages
-        if round_count > 0:
-            average_sifting_percentage = total_sifting_percentage / round_count
-            average_key_rate = total_key_rate / round_count
+        if num_rounds > 0:
+            average_sifting_percentage = total_sifting_percentage / num_rounds
+            average_key_rate = total_key_rate / num_rounds
         else:
             average_sifting_percentage = 0
             average_key_rate = 0

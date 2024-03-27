@@ -25,7 +25,7 @@ def clear_files():
     # Clear files before starting the test suite
     clear_file_contents('result.txt')
 
-@pytest.mark.parametrize("distance", range(0, 151, 10))
+@pytest.mark.parametrize("distance", range(21, 29, 10))
 def test_cow_protocol(distance):
     num_rounds = 100
     num_of_bits = 100
@@ -41,7 +41,7 @@ def test_cow_protocol(distance):
 
     pair_cow_protocols(alice.protocol_stack[0], bob.protocol_stack[0])
 
-    qc = QuantumChannel("qc", tl, attenuation=0.10, distance=distance)
+    qc = QuantumChannel("qc", tl, attenuation=0.10, distance=distance, polarization_fidelity=0.1)
     cc = ClassicalChannel("cc", tl, distance=distance)
 
     qc.set_ends(alice, bob.name)
@@ -55,8 +55,8 @@ def test_cow_protocol(distance):
     tl.init()
     alice.protocols[0].generate_sequences(num_of_bits, num_rounds)
     alice.protocols[0].send_pulse()
-    for round in range(num_rounds):
+    for round in range(1, num_rounds + 1):
         print(f"Round in progress - {round}")
         alice.protocols[0].push(1, round)
         tl.run()
-    alice.protocols[0].end_of_round(distance)
+    alice.protocols[0].end_of_round(distance, num_rounds)

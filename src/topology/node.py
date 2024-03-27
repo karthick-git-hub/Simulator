@@ -6,6 +6,7 @@ Node types can be used to collect all the necessary hardware and software for a 
 """
 
 from math import inf
+import random
 from typing import TYPE_CHECKING, Any, List
 import numpy as np
 
@@ -166,7 +167,7 @@ class Node(Entity):
             self.qchannels[dst].transmit(qubit, self)
 
 
-    def receive_qubit(self, src: str, qubit) -> None:
+    def receive_qubit(self, qubit) -> None:
         """Method to receive qubits from quantum channel.
 
         By default, forwards qubit to hardware element designated by field `receiver_name`.
@@ -175,11 +176,12 @@ class Node(Entity):
             src (str): name of node where qubit was sent from.
             qubit (any): transmitted qubit.
         """
-        if isinstance(qubit, tuple):
-            if self.get_generator().random() < 0.7:
-               self.components[self.first_component_name].detectors[0].getPhoton("detector1", qubit)
-            else:
-                self.components[self.first_component_name].detectors[1].getPhoton("detector2", qubit)
+        if isinstance(qubit, list):
+            if qubit[0][0] != []:
+                if random.random() < 0.7:
+                   self.components[self.first_component_name].detectors[0].getPhoton("detector1", qubit[0])
+                else:
+                    self.components[self.first_component_name].detectors[1].getPhoton("detector2", qubit[0])
         else:
             self.components[self.first_component_name].get(qubit)
 
