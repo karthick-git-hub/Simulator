@@ -6,11 +6,14 @@ OpticalChannels must be attached to nodes on both ends.
 """
 
 import heapq as hq
+import math
 import random
 from copy import deepcopy
 from typing import TYPE_CHECKING
 
 from qiskit import QuantumCircuit
+from qiskit_aer.noise import QuantumError
+from qiskit_aer.noise.errors import amplitude_damping_error
 
 if TYPE_CHECKING:
     from ..kernel.timeline import Timeline
@@ -107,6 +110,8 @@ class QuantumChannel(OpticalChannel):
         self.qc = QuantumCircuit(1)
         self.qc_x = QuantumCircuit(1)
         self.qc_x.x(0)
+        self.qc_amp_damp_error = QuantumCircuit(1)
+        self.qc_amp_damp_error.append(QuantumError(amplitude_damping_error(self.polarization_fidelity)), [0])
 
     def init(self) -> None:
         """Implementation of Entity interface (see base class)."""
@@ -198,10 +203,10 @@ class QuantumChannel(OpticalChannel):
             pass
 
     def transmit_cow(self, qubit: "Photon", source: "Node") -> None:
-        if random.random() > self.loss:
+        if random.random()  > self.loss:
             # COW protocol specific transmission logic
             future_time = self.timeline.now() + self.delay
-            if self.sender.get_generator().random() < self.polarization_fidelity:
+            if random.random() < self.polarization_fidelity:
                 qubit = self.introduceErrors(qubit)
             deep_copy_qubit = deepcopy(qubit)
             process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
@@ -211,15 +216,21 @@ class QuantumChannel(OpticalChannel):
 
     def introduceErrors(self, qubit):
         updatedQubit = []
-        if len(qubit) == 2 and isinstance(qubit[0][0], QuantumCircuit):
-            if qubit[0][0].data == []:
-                updatedQubit.append(self.qc_x)
-                updatedQubit.append(qubit[0][1])
-                updatedQubit.append(self.qc_x)
-            elif qubit[0][0].data[0].operation.name == "x":
-                updatedQubit.append(self.qc)
-                updatedQubit.append(qubit[0][1])
-                updatedQubit.append(self.qc)
+        if random.random() < 0.1: #self.polarization_fidelity:
+            if len(qubit) == 2 and isinstance(qubit[0][0], QuantumCircuit):
+                if qubit[0][0].data == []:
+                    updatedQubit.append(self.qc_x)
+                    updatedQubit.append(qubit[0][1])
+                    updatedQubit.append(self.qc_x)
+                elif qubit[0][0].data[0].operation.name == "x":
+                    updatedQubit.append(self.qc)
+                    updatedQubit.append(qubit[0][1])
+                    updatedQubit.append(self.qc)
+                return (updatedQubit, qubit[1])
+        elif random.random() < 0.8:
+            updatedQubit.append(self.qc_amp_damp_error)
+            updatedQubit.append(qubit[0][1])
+            updatedQubit.append(self.qc_amp_damp_error)
             return (updatedQubit, qubit[1])
         return qubit
 

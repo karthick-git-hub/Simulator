@@ -101,15 +101,17 @@ class Detector(Entity):
             self.record_detection()
 
     def getPhoton(self, detector_name: str, photon=None, ) -> None:
-        if detector_name == "detector1" and \
+        if detector_name == "detector1":
+            if self.name.startswith("Node"):
+                self.record_detection_cow(detector_name, photon)
+            elif  self.name.startswith("Bob") and \
                 photon[0] != ['decoy', 'decoy', 'decoy']:
-            self.record_detection_cow(detector_name, photon)
-        elif detector_name == "detector2"  and \
-                photon[0] == ['decoy', 'decoy', 'decoy']:
-            self.record_detection_cow(detector_name, photon)
-        elif detector_name == "detector2"  and \
-                photon[0] != ['decoy', 'decoy', 'decoy']:
-            self.record_detection_cow("detector3", photon)
+                self.record_detection_cow(detector_name, photon)
+        elif detector_name == "detector2":
+            if photon[0] == ['decoy', 'decoy', 'decoy']:
+                self.record_detection_cow(detector_name, photon)
+            else:
+                self.record_detection_cow("detector3", photon)
 
     def add_dark_count(self) -> None:
         """Method to schedule false positive detection events.
@@ -152,7 +154,7 @@ class Detector(Entity):
         # Increment the photon counter
         self.photon_counter += 1
         # Notify observers about the detection event
-        self.notify_observers({'time': photon[1], 'photon': self.measure(photon[0]), 'detector': detector_name})
+        self.notify_observers({'time': photon[1], 'photon': photon[0], 'detector': detector_name})
 
     def attach_observer(self, observer):
         if observer not in self.observers:
@@ -163,20 +165,10 @@ class Detector(Entity):
         if isinstance(self.owner.protocol_stack[0], COWProtocol):
             self.attach_observer(self.owner.protocol_stack[0])
         for observer in self.observers:
-            observer.received_message(info)
-
-    def measure(self, photon):
-        if(len(photon) == 3 and photon[1] == 'decoy'):
-            bit_0 = self.calculateBitValue(photon[0])
-            bit_1 = self.calculateBitValue(photon[2])
-            if bit_0 == bit_1:
-                return bit_0
+            if observer.name.startswith("Node1"):
+                observer.receive_node_messages(info)
             else:
-                if self.get_generator().random() < 0.5:
-                    return bit_0
-                else:
-                    return bit_1
-
+                observer.received_message(info)
     def calculateBitValue(self, photon):
         if isinstance(photon, QuantumCircuit):
             photon.measure_all()

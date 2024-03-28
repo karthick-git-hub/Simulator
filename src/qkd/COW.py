@@ -25,14 +25,25 @@ class COWProtocol(StackProtocol):
     decoy_sequence = ['decoy', 'decoy', 'decoy']
     alice_bits_with_vacuum = []
     decoy_indices = []
-    total_expected_messages = 0
     actual_alice_bits = []
     sifting_percentage = []
     key_rate = 0
-    begin_counter = 0
     total_rounds = 0
     round_details = {}
     round_number = 0
+    channel_list = []
+    detector_line_mapping = {
+        'detector1': 'dataline',
+        'detector2': 'DM1',
+        'detector3': 'DM2'
+    }
+
+    # Initialize data structures to store information for each line
+    detection_data = {
+        'dataline': [],
+        'DM1': [],
+        'DM2': []
+    }
 
     def __init__(self, own: "QKDNode", name, lightsource, qsdetector):
         super().__init__(own, name)
@@ -46,18 +57,7 @@ class COWProtocol(StackProtocol):
         self.qc_0 = QuantumCircuit(1)  # Circuit for 0 degree
         self.qc_180 = QuantumCircuit(1)  # Circuit for 180 degree
         self.qc_180.x(0)  # Applying an X gate for 180 degree
-        self.detector_line_mapping = {
-            'detector1': 'dataline',
-            'detector2': 'DM1',
-            'detector3': 'DM2'
-        }
 
-        # Initialize data structures to store information for each line
-        self.detection_data = {
-            'dataline': [],
-            'DM1': [],
-            'DM2': []
-        }
 
     def generate_sequences(self, bit_length, total_rounds, decoy_rate=0.1):
         COWProtocol.total_rounds = total_rounds
@@ -101,20 +101,22 @@ class COWProtocol(StackProtocol):
             return [self.qc_180, VACUUM, self.qc_180]
 
     def push(self, key_num, rounds, run_time=np.inf):
-        COWProtocol.begin_counter = 0
         self.message_counter = 0
         COWProtocol.actual_alice_bits = []
         self.own.destination = self.another.own.name
+        COWProtocol.detection_data = {'dataline': [], 'DM1': [], 'DM2': []}
         self.attach_to_detector()
         print(
             f"Total with vacuum: {len(COWProtocol.alice_bits_with_vacuum)} alice_bits_with_vacuum --  {COWProtocol.alice_bits_with_vacuum}  round -- {rounds}")
         lightsource = self.own.components[self.lightsource]
         alice_bits_with_vacuum_copy = deepcopy(COWProtocol.alice_bits_with_vacuum)
+        if self.own.destination == "Bob":
+            alice_bits_with_vacuum_copy = deepcopy(COWProtocol.channel_list)
+        COWProtocol.channel_list = []
         lightsource.custom_emit(alice_bits_with_vacuum_copy)
         for bit in alice_bits_with_vacuum_copy:
             if bit[0] != COWProtocol.decoy_sequence:
                 COWProtocol.actual_alice_bits.append((self.measure(bit[0]), bit[1]))
-        COWProtocol.total_expected_messages = len(COWProtocol.actual_alice_bits)
 
 
     def pop(self, detector_index: int, time: int):
@@ -132,6 +134,10 @@ class COWProtocol(StackProtocol):
         else:
             raise AttributeError(f"Detector {self.qsdetector} not found in QKDNode components")
 
+    def receive_node_messages(self, info):
+        COWProtocol.channel_list.append((info['photon'], info['time']))
+        print(COWProtocol.channel_list)
+
     def received_message(self, info):
         # Handle the detection time update from the detector
         detection_time = info['time']
@@ -142,23 +148,15 @@ class COWProtocol(StackProtocol):
                 self.message_counter += 1
 
         # Determine the line based on the detector
-        line = self.detector_line_mapping.get(detector)
+        line = COWProtocol.detector_line_mapping.get(detector)
         if line:
             # Store the detection information in the respective line's data
-            self.detection_data[line].append({
+            COWProtocol.detection_data[line].append({
                 'time': detection_time,
-                'photon': photon,
+                'photon': self.measure(photon),
                 'detector': detector
             })
 
-        if self.message_counter == COWProtocol.total_expected_messages or self.message_counter > COWProtocol.total_expected_messages:
-            if COWProtocol.begin_counter == 0:
-                self.begin_classical_communication(self.detection_data)
-                '''process = Process(self, "begin_classical_communication", [self.detection_data])
-                event = Event(int(self.own.timeline.now()), process)
-                self.own.timeline.schedule(event)
-                '''
-                COWProtocol.begin_counter += 1
 
     def measure(self, photon):
         if (len(photon) == 3 and photon[1] == 'decoy'):
@@ -182,8 +180,8 @@ class COWProtocol(StackProtocol):
             measured_bit = list(counts.keys())[0][-1]  # Get the last character of the result key
             return int(measured_bit)  # Convert to integer (0 or 1)
 
-    def begin_classical_communication(self, detection_data):
-        self.sifting_process(detection_data)
+    def begin_classical_communication(self):
+        self.sifting_process(COWProtocol.detection_data)
 
     def sifting_process(self, detection_data):
         COWProtocol.sifting_percentage = []
@@ -276,13 +274,13 @@ class COWProtocol(StackProtocol):
         def calculate_parity(bits):
             return "even" if sum(bits) % 2 == 0 else "odd"
         # Calculate parity for Alice's bits in blocks of 3
-        for i in range(0, len(raw_key_alice), 3):
-            alice_bits = [bit for bit, _ in raw_key_alice[i:i + 3]]
+        for i in range(0, len(raw_key_alice), 2):
+            alice_bits = [bit for bit, _ in raw_key_alice[i:i + 2]]
             alice_parity = calculate_parity(alice_bits.copy())
             alice_parity_list.append(alice_parity)
         # Calculate parity for Bob's bits in blocks of 3
-        for i in range(0, len(raw_key_bob), 3):
-            bob_bits = [bit for bit, _ in raw_key_bob[i:i + 3]]
+        for i in range(0, len(raw_key_bob), 2):
+            bob_bits = [bit for bit, _ in raw_key_bob[i:i + 2]]
             bob_parity = calculate_parity(bob_bits.copy())
             bob_parity_list.append(bob_parity)
 
