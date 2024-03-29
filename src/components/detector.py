@@ -165,7 +165,7 @@ class Detector(Entity):
         if isinstance(self.owner.protocol_stack[0], COWProtocol):
             self.attach_observer(self.owner.protocol_stack[0])
         for observer in self.observers:
-            if observer.name.startswith("Node1"):
+            if observer.name.startswith("Node"):
                 observer.receive_node_messages(info)
             else:
                 observer.received_message(info)

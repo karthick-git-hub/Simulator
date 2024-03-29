@@ -53,12 +53,18 @@ def test_cow_protocol(distance):
     tl = Timeline(1e12)
     tl.seed(1)
 
+    # Initialize nodes
     alice = QKDNode("Alice", tl)
     node1 = QKDNode("Node1", tl)
+    node2 = QKDNode("Node2", tl)
+    node3 = QKDNode("Node3", tl)
+    node4 = QKDNode("Node4", tl)
     bob = QKDNode("Bob", tl)
 
-    nodes = [alice.name, node1.name, bob.name]
-    edges = [(alice.name, node1.name), (node1.name, bob.name)]
+    # Include the additional nodes in the diagram and topology
+    nodes = [alice.name, node1.name, node2.name, node3.name, node4.name, bob.name]
+    edges = [(alice.name, node1.name), (node1.name, node2.name), (node2.name, node3.name),
+             (node3.name, node4.name), (node4.name, bob.name)]
     diagram_file_name = 'network_diagram.png'
     draw_network_diagram(nodes, edges, "Network Diagram for QKD System using COW Protocol", diagram_file_name)
 
@@ -67,22 +73,44 @@ def test_cow_protocol(distance):
     bob.set_seed(2)
 
     pair_cow_protocols(alice.protocol_stack[0], node1.protocol_stack[0])
-    pair_cow_protocols(node1.protocol_stack[0], bob.protocol_stack[0])
+    pair_cow_protocols(node1.protocol_stack[0], node2.protocol_stack[0])
+    pair_cow_protocols(node2.protocol_stack[0], node3.protocol_stack[0])
+    pair_cow_protocols(node3.protocol_stack[0], node4.protocol_stack[0])
+    pair_cow_protocols(node4.protocol_stack[0], bob.protocol_stack[0])
 
-    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.05)
-    qc_node1_bob = QuantumChannel("qc_node1_bob", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.05)
+    # Set up quantum channels in a ring topology
+    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
+    qc_node1_node2 = QuantumChannel("qc_node1_node2", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
+    qc_node2_node3 = QuantumChannel("qc_node2_node3", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
+    qc_node3_node4 = QuantumChannel("qc_node3_node4", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
+    qc_node4_bob = QuantumChannel("qc_node4_bob", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
 
     qc_alice_node1.set_ends(alice, node1.name)
-    qc_node1_bob.set_ends(node1, bob.name)
+    qc_node1_node2.set_ends(node1, node2.name)
+    qc_node2_node3.set_ends(node2, node3.name)
+    qc_node3_node4.set_ends(node3, node4.name)
+    qc_node4_bob.set_ends(node4, bob.name)
 
     pa = Parent(alice, 128, "parent_Alice")
-    pnode = Parent(node1, 128, "parent_Node")
+    pnode_1 = Parent(node1, 128, "parent_Node_1")
+    pnode_2 = Parent(node2, 128, "parent_Node_2")
+    pnode_3 = Parent(node3, 128, "parent_Node_3")
+    pnode_4 = Parent(node4, 128, "parent_Node_4")
 
     alice.protocols[0].upper_protocols.append(pa)
     pa.lower_protocols.append(alice.protocol_stack[0])
 
-    node1.protocols[0].upper_protocols.append(pnode)
-    pnode.lower_protocols.append(node1.protocol_stack[0])
+    node1.protocols[0].upper_protocols.append(pnode_1)
+    pnode_1.lower_protocols.append(node1.protocol_stack[0])
+
+    node2.protocols[0].upper_protocols.append(pnode_2)
+    pnode_2.lower_protocols.append(node2.protocol_stack[0])
+
+    node3.protocols[0].upper_protocols.append(pnode_3)
+    pnode_3.lower_protocols.append(node3.protocol_stack[0])
+
+    node4.protocols[0].upper_protocols.append(pnode_4)
+    pnode_4.lower_protocols.append(node4.protocol_stack[0])
 
     tl.init()
     alice.protocols[0].generate_sequences(num_of_bits, num_rounds)
@@ -94,10 +122,27 @@ def test_cow_protocol(distance):
         tl.run()
         while not tl.events.isempty():
             tl.run()
+
         node1.protocols[0].push(1, round)
         tl.run()
         while not tl.events.isempty():
             tl.run()
-        node1.protocols[0].begin_classical_communication()
 
-    node1.protocols[0].end_of_round(distance, num_rounds)
+        node2.protocols[0].push(1, round)
+        tl.run()
+        while not tl.events.isempty():
+            tl.run()
+
+        node3.protocols[0].push(1, round)
+        tl.run()
+        while not tl.events.isempty():
+            tl.run()
+
+        node4.protocols[0].push(1, round)
+        tl.run()
+        while not tl.events.isempty():
+            tl.run()
+
+        node4.protocols[0].begin_classical_communication()
+
+    node4.protocols[0].end_of_round(distance, num_rounds)
