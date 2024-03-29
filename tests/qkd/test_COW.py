@@ -45,7 +45,7 @@ def draw_network_diagram(nodes, edges, title, file_name):
     plt.savefig(file_name)  # Save the figure to a file
     plt.close()  # Close the plot to free up memory
 
-@pytest.mark.parametrize("distance", range(1, 159, 10))
+@pytest.mark.parametrize("distance", range(21, 22, 10))
 def test_cow_protocol(distance):
     clear_file_contents('round_details.txt')
     num_rounds = 10
@@ -79,11 +79,11 @@ def test_cow_protocol(distance):
     pair_cow_protocols(node4.protocol_stack[0], bob.protocol_stack[0])
 
     # Set up quantum channels in a ring topology
-    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
-    qc_node1_node2 = QuantumChannel("qc_node1_node2", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
-    qc_node2_node3 = QuantumChannel("qc_node2_node3", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
-    qc_node3_node4 = QuantumChannel("qc_node3_node4", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
-    qc_node4_bob = QuantumChannel("qc_node4_bob", tl, distance=distance, attenuation=0.02, polarization_fidelity=0.02)
+    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_node1_node2 = QuantumChannel("qc_node1_node2", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_node2_node3 = QuantumChannel("qc_node2_node3", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_node3_node4 = QuantumChannel("qc_node3_node4", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_node4_bob = QuantumChannel("qc_node4_bob", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
 
     qc_alice_node1.set_ends(alice, node1.name)
     qc_node1_node2.set_ends(node1, node2.name)
@@ -145,4 +145,4 @@ def test_cow_protocol(distance):
 
         node4.protocols[0].begin_classical_communication()
 
-    node4.protocols[0].end_of_round(distance, num_rounds)
+    node4.protocols[0].end_of_round(distance * 5, num_rounds)

@@ -206,7 +206,7 @@ class QuantumChannel(OpticalChannel):
         if random.random()  > self.loss:
             # COW protocol specific transmission logic
             future_time = self.timeline.now() + self.delay
-            if random.random() < self.polarization_fidelity:
+            if random.random() > self.polarization_fidelity:
                 qubit = self.introduceErrors(qubit)
             deep_copy_qubit = deepcopy(qubit)
             process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
