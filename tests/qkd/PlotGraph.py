@@ -15,9 +15,9 @@ def plot_graphs(file_path):
     # Plot for sifting percentage over distance
     plt.figure(figsize=(10, 5))
     plt.plot(distances, average_sifting_percentages, marker='o', linestyle='-', label='Average Sifting Percentage')
-    plt.title('Average Sifting Percentage over Distance')
-    plt.xlabel('Distance')
-    plt.ylabel('Average Sifting Percentage')
+    plt.title('Sifting Success Rate over Distance for Alice and Bob')
+    plt.xlabel('Distance A-B')
+    plt.ylabel('Sifting Success Rate')
     plt.grid(True)
     plt.legend()
     plt.savefig('sifting_percentage_over_distance.png')  # Save the plot as a PNG file

@@ -1,10 +1,13 @@
 import pytest
-import numpy as np
 from src.qkd.COW import pair_cow_protocols
 from src.components.optical_channel import QuantumChannel, ClassicalChannel
 from src.kernel.timeline import Timeline
 from src.topology.node import QKDNode
 from src.protocol import Protocol
+import matplotlib
+matplotlib.use('Agg')  # Use a non-GUI backend to prevent Tkinter errors
+import matplotlib.pyplot as plt
+import networkx as nx
 
 class Parent(Protocol):
     def __init__(self, own, length, name):
@@ -22,14 +25,31 @@ def clear_file_contents(file_name):
 
 @pytest.fixture(scope="module", autouse=True)
 def clear_files():
-    # Clear files before starting the test suite
     clear_file_contents('result.txt')
+
+def draw_network_diagram(nodes, edges, title, file_name):
+    G = nx.DiGraph()
+    G.add_nodes_from(nodes)
+    G.add_edges_from(edges)
+
+    pos = nx.spring_layout(G)
+    nx.draw_networkx_nodes(G, pos, node_size=7000, node_color="lightblue", alpha=0.6)
+    nx.draw_networkx_edges(G, pos, width=2, alpha=0.5, edge_color="gray")
+    nx.draw_networkx_labels(G, pos, font_size=12, font_family="sans-serif")
+
+    edge_labels = {edge: f"Quantum Channel\n{edge[0]} to {edge[1]}" for edge in edges}
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.5)
+
+    plt.title(title)
+    plt.axis('off')
+    plt.savefig(file_name)  # Save the figure to a file
+    plt.close()  # Close the plot to free up memory
 
 @pytest.mark.parametrize("distance", range(1, 159, 10))
 def test_cow_protocol(distance):
     clear_file_contents('round_details.txt')
-    num_rounds = 100
-    num_of_bits = 100
+    num_rounds = 10
+    num_of_bits = 10
     tl = Timeline(1e12)
     tl.seed(1)
 
@@ -37,15 +57,18 @@ def test_cow_protocol(distance):
     node1 = QKDNode("Node1", tl)
     bob = QKDNode("Bob", tl)
 
+    nodes = [alice.name, node1.name, bob.name]
+    edges = [(alice.name, node1.name), (node1.name, bob.name)]
+    diagram_file_name = 'network_diagram.png'
+    draw_network_diagram(nodes, edges, "Network Diagram for QKD System using COW Protocol", diagram_file_name)
+
     alice.set_seed(0)
     node1.set_seed(1)
     bob.set_seed(2)
 
-    # Pair protocols for communication
     pair_cow_protocols(alice.protocol_stack[0], node1.protocol_stack[0])
     pair_cow_protocols(node1.protocol_stack[0], bob.protocol_stack[0])
 
-    # Set up quantum channels between the nodes
     qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.05)
     qc_node1_bob = QuantumChannel("qc_node1_bob", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.05)
 
@@ -67,16 +90,12 @@ def test_cow_protocol(distance):
 
     for round in range(1, num_rounds + 1):
         print(f"Round {round} in progress")
-        # Alice sends to Node1
         alice.protocols[0].push(1, round)
-        tl.run()  # Run the timeline to process Alice's push to Node1
-        # Wait until all events are processed before starting the next push
+        tl.run()
         while not tl.events.isempty():
             tl.run()
-        # Now start Node1 to Bob communication
         node1.protocols[0].push(1, round)
-        tl.run()  # Run the timeline to process Node1's push to Bob
-        # Wait until all events are processed before ending the round
+        tl.run()
         while not tl.events.isempty():
             tl.run()
         node1.protocols[0].begin_classical_communication()

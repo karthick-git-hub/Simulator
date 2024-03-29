@@ -28,7 +28,9 @@ class Process:
         Will run the `activation_method` method of `owner` with `act_params` passed as args.
         """
         # Check if act_params should be treated as a single argument
-        if isinstance(self.act_params, list) and isinstance(self.act_params[0][0], list):
-            return getattr(self.owner, self.activation)(self.act_params, **self.act_kwargs)
-        else:
-            return getattr(self.owner, self.activation)(*self.act_params, **self.act_kwargs)
+        print(f"Process {self.act_params}")
+        if len(self.act_params) > 0:
+            if isinstance(self.act_params, list) and isinstance(self.act_params[0][0], list):
+                return getattr(self.owner, self.activation)(self.act_params, **self.act_kwargs)
+            else:
+                return getattr(self.owner, self.activation)(*self.act_params, **self.act_kwargs)
