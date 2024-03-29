@@ -25,7 +25,7 @@ def clear_files():
     # Clear files before starting the test suite
     clear_file_contents('result.txt')
 
-@pytest.mark.parametrize("distance", range(1, 9, 10))
+@pytest.mark.parametrize("distance", range(1, 159, 10))
 def test_cow_protocol(distance):
     clear_file_contents('round_details.txt')
     num_rounds = 100
@@ -46,8 +46,8 @@ def test_cow_protocol(distance):
     pair_cow_protocols(node1.protocol_stack[0], bob.protocol_stack[0])
 
     # Set up quantum channels between the nodes
-    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.1)
-    qc_node1_bob = QuantumChannel("qc_node1_bob", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.1)
+    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.05)
+    qc_node1_bob = QuantumChannel("qc_node1_bob", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.05)
 
     qc_alice_node1.set_ends(alice, node1.name)
     qc_node1_bob.set_ends(node1, bob.name)

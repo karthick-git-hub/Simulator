@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING
 from datetime import datetime, timedelta
 import numpy as np
 from qiskit import QuantumCircuit, Aer, execute
-
-import json
 from ..protocol import StackProtocol
 
 if TYPE_CHECKING:
@@ -13,13 +11,11 @@ if TYPE_CHECKING:
 
 import json
 
-
 def pair_cow_protocols(sender: "COWProtocol", receiver: "COWProtocol") -> None:
     sender.another = receiver
     receiver.another = sender
     sender.role = 0
     receiver.role = 1
-
 
 class COWProtocol(StackProtocol):
     decoy_sequence = ['decoy', 'decoy', 'decoy']
@@ -186,6 +182,7 @@ class COWProtocol(StackProtocol):
     def sifting_process(self, detection_data):
         COWProtocol.sifting_percentage = []
         dataline_entries = detection_data['dataline']
+        security_percentage = 0.0
         # Remove duplicates based on a specific key in each dictionary
         unique_entries = []
         unique_keys = set()
@@ -212,32 +209,25 @@ class COWProtocol(StackProtocol):
         print("\nRandom bits for sifting:", random_bits)
         sameFlagValue = 0
         differentFlagValue = 0
+        if len(random_bits) > 0:
+            # Perform the sifting process
+            for index in random_bits:
+                if index < len(raw_key_bob):
+                    bob_bit, bob_timestamp = raw_key_bob[index]
+                    # Find the corresponding Alice bit using the timestamp
+                    alice_bit = next((bit for bit, time in raw_key_alice if time == bob_timestamp), None)
+                    print(f"Alice's bit: {alice_bit}, Bob's bit: {bob_bit} at {bob_timestamp}")
+                    if alice_bit == bob_bit:
+                        sameFlagValue += 1
+                    else:
+                        differentFlagValue += 1
 
-        # Perform the sifting process
-        for index in random_bits:
-            if index < len(raw_key_bob):
-                bob_bit, bob_timestamp = raw_key_bob[index]
-                # Find the corresponding Alice bit using the timestamp
-                alice_bit = next((bit for bit, time in raw_key_alice if time == bob_timestamp), None)
-                print(f"Alice's bit: {alice_bit}, Bob's bit: {bob_bit} at {bob_timestamp}")
-                if alice_bit == bob_bit:
-                    sameFlagValue += 1
-                else:
-                    differentFlagValue += 1
+            print(f"Same: {sameFlagValue}, Different: {differentFlagValue}")
+            security_percentage  = (sameFlagValue / len(random_bits)) * 100 if sameFlagValue > 0 else 0
+            print(f"security_percentage: {security_percentage}")
 
-        print(f"Same: {sameFlagValue}, Different: {differentFlagValue}")
-        security_percentage  = (sameFlagValue / len(random_bits)) * 100 if sameFlagValue > 0 else 0
-        print(f"security_percentage: {security_percentage}")
-
-        if len(COWProtocol.sifting_percentage) == 0:  # Check if sifting percentage is empty
-            COWProtocol.sifting_percentage.append(security_percentage)
-        else:
-            COWProtocol.sifting_percentage.insert(len(COWProtocol.sifting_percentage), security_percentage)  # Insert at the second position (index 1)
+        COWProtocol.sifting_percentage.append(security_percentage)
         self.discard_bits_post_sifting(random_bits, raw_key_alice, raw_key_bob)
-
-        '''process = Process(self, "discard_bits_post_sifting", [random_bits, raw_key_alice, raw_key_bob])
-        event = Event(int(self.own.timeline.now()), process)
-        self.own.timeline.schedule(event)'''
 
 
     def discard_bits_post_sifting(self, random_bits, raw_key_alice, raw_key_bob):
@@ -257,10 +247,6 @@ class COWProtocol(StackProtocol):
         print("\n length -- ", len(raw_key_alice), "self.raw_key_alice", raw_key_alice)
         print("\n length -- ", len(raw_key_bob), "self.raw_key_bob", raw_key_bob)
         self.parity_check(raw_key_alice, raw_key_bob)
-        '''process = Process(self, "parity_check", [raw_key_alice, raw_key_bob])
-        event = Event(int(self.own.timeline.now()), process)
-        self.own.timeline.schedule(event)'''
-
 
     def parity_check(self, raw_key_alice, raw_key_bob):
         alice_parity_list = []
@@ -274,13 +260,13 @@ class COWProtocol(StackProtocol):
         def calculate_parity(bits):
             return "even" if sum(bits) % 2 == 0 else "odd"
         # Calculate parity for Alice's bits in blocks of 3
-        for i in range(0, len(raw_key_alice), 2):
-            alice_bits = [bit for bit, _ in raw_key_alice[i:i + 2]]
+        for i in range(0, len(raw_key_alice), 3):
+            alice_bits = [bit for bit, _ in raw_key_alice[i:i + 3]]
             alice_parity = calculate_parity(alice_bits.copy())
             alice_parity_list.append(alice_parity)
         # Calculate parity for Bob's bits in blocks of 3
-        for i in range(0, len(raw_key_bob), 2):
-            bob_bits = [bit for bit, _ in raw_key_bob[i:i + 2]]
+        for i in range(0, len(raw_key_bob), 3):
+            bob_bits = [bit for bit, _ in raw_key_bob[i:i + 3]]
             bob_parity = calculate_parity(bob_bits.copy())
             bob_parity_list.append(bob_parity)
 
@@ -312,7 +298,10 @@ class COWProtocol(StackProtocol):
         self.random_bits = 0
         if not isinstance(length, int):
             raise TypeError("Length must be an integer")
+        if length <= 0:
+            return []
         self.random_bits = max(1, round(length * 0.10))  # Calculate 10% of the length, ensuring at least 1 segment
+        print(f"generating random bits {self.random_bits} {length}")
         random_bits = random.sample(range(length), self.random_bits)  # Generate unique random indices
         return sorted(random_bits)  # Return the sorted list of random_bits
 
