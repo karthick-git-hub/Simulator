@@ -27,39 +27,58 @@ def clear_file_contents(file_name):
 def clear_files():
     clear_file_contents('result.txt')
 
+
 def draw_network_diagram(nodes, edges, title, file_name):
+    # Create a directed graph
     G = nx.DiGraph()
     G.add_nodes_from(nodes)
     G.add_edges_from(edges)
 
-    pos = nx.spring_layout(G)
-    nx.draw_networkx_nodes(G, pos, node_size=7000, node_color="lightblue", alpha=0.6)
-    nx.draw_networkx_edges(G, pos, width=2, alpha=0.5, edge_color="gray")
+    # Position the nodes using the shell layout for better spacing
+    pos = nx.shell_layout(G)
+
+    # Set figure size to accommodate the graph
+    plt.figure(figsize=(12, 8))
+
+    # Draw the nodes
+    nx.draw_networkx_nodes(G, pos, node_size=3000, node_color='skyblue', alpha=0.6)
+
+    # Draw the edges with arrows
+    nx.draw_networkx_edges(G, pos, edge_color='gray', arrowstyle='->', arrowsize=20)
+
+    # Draw the node labels
     nx.draw_networkx_labels(G, pos, font_size=12, font_family="sans-serif")
 
-    edge_labels = {edge: f"Quantum Channel\n{edge[0]} to {edge[1]}" for edge in edges}
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.5)
+    # Define and draw the edge labels
+    edge_labels = {edge: 'Quantum Channel' for edge in edges}
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.5, font_size=9)
 
+    # Set the title of the plot
     plt.title(title)
-    plt.axis('off')
-    plt.savefig(file_name)  # Save the figure to a file
-    plt.close()  # Close the plot to free up memory
 
-@pytest.mark.parametrize("distance", range(21, 22, 10))
+    # Remove the axes
+    plt.axis('off')
+
+    # Save the diagram to a file
+    plt.savefig(file_name, format='PNG', bbox_inches='tight')
+    plt.close()
+
+
+@pytest.mark.parametrize("distance", range(1, 32, 2))
 def test_cow_protocol(distance):
     clear_file_contents('round_details.txt')
-    num_rounds = 10
-    num_of_bits = 10
+    num_rounds = 100
+    num_of_bits = 100
     tl = Timeline(1e12)
     tl.seed(1)
 
     # Initialize nodes
-    alice = QKDNode("Alice", tl)
-    node1 = QKDNode("Node1", tl)
-    node2 = QKDNode("Node2", tl)
-    node3 = QKDNode("Node3", tl)
-    node4 = QKDNode("Node4", tl)
-    bob = QKDNode("Bob", tl)
+    alice = QKDNode("Alice", tl, stack_size=3)
+    node1 = QKDNode("Node1", tl, stack_size=3)
+    node2 = QKDNode("Node2", tl, stack_size=3)
+    node3 = QKDNode("Node3", tl, stack_size=3)
+    node4 = QKDNode("Node4", tl, stack_size=3)
+    bob = QKDNode("Bob", tl, stack_size=3)
 
     # Include the additional nodes in the diagram and topology
     nodes = [alice.name, node1.name, node2.name, node3.name, node4.name, bob.name]
@@ -79,11 +98,11 @@ def test_cow_protocol(distance):
     pair_cow_protocols(node4.protocol_stack[0], bob.protocol_stack[0])
 
     # Set up quantum channels in a ring topology
-    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
-    qc_node1_node2 = QuantumChannel("qc_node1_node2", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
-    qc_node2_node3 = QuantumChannel("qc_node2_node3", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
-    qc_node3_node4 = QuantumChannel("qc_node3_node4", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
-    qc_node4_bob = QuantumChannel("qc_node4_bob", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+    qc_node1_node2 = QuantumChannel("qc_node1_node2", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+    qc_node2_node3 = QuantumChannel("qc_node2_node3", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+    qc_node3_node4 = QuantumChannel("qc_node3_node4", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+    qc_node4_bob = QuantumChannel("qc_node4_bob", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
 
     qc_alice_node1.set_ends(alice, node1.name)
     qc_node1_node2.set_ends(node1, node2.name)
@@ -122,26 +141,30 @@ def test_cow_protocol(distance):
         tl.run()
         while not tl.events.isempty():
             tl.run()
-
+        print(f" Alice run done")
         node1.protocols[0].push(1, round)
         tl.run()
         while not tl.events.isempty():
             tl.run()
 
+        print(f" Node1 run done")
         node2.protocols[0].push(1, round)
         tl.run()
         while not tl.events.isempty():
             tl.run()
+        print(f" Node2 run done")
 
         node3.protocols[0].push(1, round)
         tl.run()
         while not tl.events.isempty():
             tl.run()
+        print(f" Node3 run done")
 
         node4.protocols[0].push(1, round)
         tl.run()
         while not tl.events.isempty():
             tl.run()
+        print(f" Node4 run done")
 
         node4.protocols[0].begin_classical_communication()
 

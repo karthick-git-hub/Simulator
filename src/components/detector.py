@@ -11,6 +11,8 @@ from numpy import eye, kron, exp, sqrt
 from scipy.linalg import fractional_matrix_power
 from math import factorial
 from qiskit import QuantumCircuit, Aer, execute
+
+from ..qkd.three_stage import ThreeStageProtocol
 from ..qkd.COW import COWProtocol
 
 if TYPE_CHECKING:
@@ -100,7 +102,7 @@ class Detector(Entity):
         if self.get_generator().random() < self.efficiency:
             self.record_detection()
 
-    def getPhoton(self, detector_name: str, photon=None, ) -> None:
+    def getPhoton(self, detector_name: str, photon=None ) -> None:
         if detector_name == "detector1":
             if self.name.startswith("Node"):
                 self.record_detection_cow(detector_name, photon)
@@ -112,6 +114,9 @@ class Detector(Entity):
                 self.record_detection_cow(detector_name, photon)
             else:
                 self.record_detection_cow("detector3", photon)
+
+    def getPhotonForThreeStage(self, detector_name: str, photon=None ):
+        self.record_detection_three_stage(detector_name, photon)
 
     def add_dark_count(self) -> None:
         """Method to schedule false positive detection events.
@@ -149,6 +154,10 @@ class Detector(Entity):
             self.notify({'time': time})
             self.next_detection_time = now + (1e12 / self.count_rate)  # period in ps
 
+    def record_detection_three_stage(self, detector_name:str, photon):
+        # Notify observers about the detection event
+        self.notify_observers({'photon': photon[0]})
+
     # For COW begin
     def record_detection_cow(self, detector_name:str, photon):
         # Increment the photon counter
@@ -160,15 +169,15 @@ class Detector(Entity):
         if observer not in self.observers:
             self.observers.append(observer)
 
-
     def notify_observers(self, info):
-        if isinstance(self.owner.protocol_stack[0], COWProtocol):
+        if isinstance(self.owner.protocol_stack[0], COWProtocol) or isinstance(self.owner.protocol_stack[0], ThreeStageProtocol):
             self.attach_observer(self.owner.protocol_stack[0])
         for observer in self.observers:
             if observer.name.startswith("Node"):
                 observer.receive_node_messages(info)
             else:
                 observer.received_message(info)
+
     def calculateBitValue(self, photon):
         if isinstance(photon, QuantumCircuit):
             photon.measure_all()

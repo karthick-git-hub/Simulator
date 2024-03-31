@@ -4,6 +4,9 @@ This module defines a process, which is performed when an event is executed.
 """
 from typing import Any, List
 
+from src.qkd.COW import COWProtocol
+from src.qkd.three_stage import ThreeStageProtocol
+
 
 class Process:
     """Class of process.
@@ -28,9 +31,11 @@ class Process:
         Will run the `activation_method` method of `owner` with `act_params` passed as args.
         """
         # Check if act_params should be treated as a single argument
-        print(f"Process {self.act_params}")
         if len(self.act_params) > 0:
-            if isinstance(self.act_params, list) and isinstance(self.act_params[0][0], list):
-                return getattr(self.owner, self.activation)(self.act_params, **self.act_kwargs)
+            if isinstance(self.act_params, list):
+                if isinstance(self.owner.protocol_stack[0], ThreeStageProtocol):
+                    return getattr(self.owner, self.activation)(self.act_params, **self.act_kwargs)
+                elif isinstance(self.owner.protocol_stack[0], COWProtocol) and isinstance(self.act_params[0][0], list):
+                    return getattr(self.owner, self.activation)(self.act_params, **self.act_kwargs)
             else:
                 return getattr(self.owner, self.activation)(*self.act_params, **self.act_kwargs)

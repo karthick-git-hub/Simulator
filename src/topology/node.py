@@ -29,6 +29,7 @@ from ..components.detector import QSDetector, QSDetectorPolarization, QSDetector
 from ..qkd.BB84 import BB84
 from ..qkd.cascade import Cascade
 from ..qkd.COW import COWProtocol
+from ..qkd.three_stage import ThreeStageProtocol
 from ..entanglement_management.generation import EntanglementGenerationB
 from ..resource_management.resource_manager import ResourceManager
 from ..network_management.network_manager import NewNetworkManager
@@ -162,7 +163,9 @@ class Node(Entity):
     def send_qubit(self, dst: str, qubit) -> None:
         """Overridden send_qubit method to handle different protocols."""
         if isinstance(self.protocol_stack[0], COWProtocol):
-            self.qchannels[dst].transmit_cow(qubit, self)
+            self.qchannels[dst].transmit_cow_or_three_stage(qubit, "COW")
+        elif isinstance(self.protocol_stack[0], ThreeStageProtocol):
+            self.qchannels[dst].transmit_cow_or_three_stage(qubit, "ThreeStage")
         else:
             self.qchannels[dst].transmit(qubit, self)
 
@@ -177,11 +180,14 @@ class Node(Entity):
             qubit (any): transmitted qubit.
         """
         if isinstance(qubit, list):
-            if qubit[0][0] != []:
-                if random.random() < 0.7:
-                   self.components[self.first_component_name].detectors[0].getPhoton("detector1", qubit[0])
-                else:
-                    self.components[self.first_component_name].detectors[1].getPhoton("detector2", qubit[0])
+            if isinstance(self.protocol_stack[0], ThreeStageProtocol):
+                    self.components[self.first_component_name].detectors[0].getPhotonForThreeStage("detector1", qubit)
+            elif isinstance(self.protocol_stack[0],COWProtocol):
+                if qubit[0][0] != []:
+                    if random.random() < 0.7:
+                       self.components[self.first_component_name].detectors[0].getPhoton("detector1", qubit[0])
+                    else:
+                        self.components[self.first_component_name].detectors[1].getPhoton("detector2", qubit[0])
         else:
             self.components[self.first_component_name].get(qubit)
 
@@ -457,7 +463,12 @@ class QKDNode(Node):
         # add protocols
         self.protocol_stack = [None] * 5
 
-        if stack_size > 2:
+        if stack_size > 3:
+            # Create COW protocol
+            self.protocol_stack[0] = ThreeStageProtocol(self, name + ".threestage", ls_name, qsd_name)
+            self.protocols.append(self.protocol_stack[0])
+
+        elif stack_size > 2:
             # Create COW protocol
             self.protocol_stack[0] = COWProtocol(self, name + ".COW", ls_name, qsd_name)
             self.protocols.append(self.protocol_stack[0])

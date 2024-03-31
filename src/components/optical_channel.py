@@ -12,8 +12,11 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 
 from qiskit import QuantumCircuit
+from qiskit.circuit.library import UnitaryGate
 from qiskit_aer.noise import QuantumError
 from qiskit_aer.noise.errors import amplitude_damping_error
+
+from protocol import StackProtocol
 
 if TYPE_CHECKING:
     from ..kernel.timeline import Timeline
@@ -202,19 +205,22 @@ class QuantumChannel(OpticalChannel):
         else:
             pass
 
-    def transmit_cow(self, qubit: "Photon", source: "Node") -> None:
+    def transmit_cow_or_three_stage(self, qubit: "Photon", protocol: str) -> None:
         if random.random()  > self.loss:
             # COW protocol specific transmission logic
             future_time = self.timeline.now() + self.delay
             if random.random() > self.polarization_fidelity:
-                qubit = self.introduceErrors(qubit)
+                if protocol == "COW":
+                    qubit = self.introduceErrorsForCow(qubit)
+               # else:
+                #     qubit = self.introduceErrorsForThreeStage(qubit)
             deep_copy_qubit = deepcopy(qubit)
             process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
             event = Event(future_time, process)
             self.timeline.schedule(event)
 
 
-    def introduceErrors(self, qubit):
+    def introduceErrorsForCow(self, qubit):
         updatedQubit = []
         if random.random() < 0.1: #self.polarization_fidelity:
             if len(qubit) == 2 and isinstance(qubit[0][0], QuantumCircuit):
@@ -227,12 +233,38 @@ class QuantumChannel(OpticalChannel):
                     updatedQubit.append(qubit[0][1])
                     updatedQubit.append(self.qc)
                 return (updatedQubit, qubit[1])
-        elif random.random() < 0.8:
+        else:
             updatedQubit.append(self.qc_amp_damp_error)
             updatedQubit.append(qubit[0][1])
             updatedQubit.append(self.qc_amp_damp_error)
             return (updatedQubit, qubit[1])
         return qubit
+
+
+    def introduceErrorsForThreeStage(self, qubit):
+        print(qubit)
+        if len(qubit.data) == 1:
+            unitary_matrix = qubit.data[0].operation.params[0]
+            qubits = qubit.data[0].qubits
+        else:
+            unitary_matrix = qubit.data[1].operation.params[0]
+            qubits = qubit.data[1].qubits
+
+        if random.random() < 0.1: #self.polarization_fidelity:
+            if isinstance(qubit, QuantumCircuit):
+                if len(qubit.data) == 1:
+                    new_qc = deepcopy(self.qc_x)
+                    new_qc.append(UnitaryGate(unitary_matrix), qubits)
+                elif qubit.data[0].operation.name == "x":
+                    new_qc = deepcopy(self.qc)
+                    new_qc.append(UnitaryGate(unitary_matrix), qubits)
+                return (new_qc)
+        else:
+            new_qc = deepcopy(self.qc_amp_damp_error)
+            new_qc.append(UnitaryGate(unitary_matrix), qubits)
+            return (new_qc)
+        return qubit
+
 
     def schedule_transmit(self, min_time: int) -> int:
         """Method to schedule a time for photon transmission.

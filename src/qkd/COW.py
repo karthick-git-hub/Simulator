@@ -102,12 +102,11 @@ class COWProtocol(StackProtocol):
         self.own.destination = self.another.own.name
         COWProtocol.detection_data = {'dataline': [], 'DM1': [], 'DM2': []}
         self.attach_to_detector()
-        print(
-            f"Total with vacuum: {len(COWProtocol.alice_bits_with_vacuum)} alice_bits_with_vacuum --  {COWProtocol.alice_bits_with_vacuum}  round -- {rounds}")
         lightsource = self.own.components[self.lightsource]
         alice_bits_with_vacuum_copy = deepcopy(COWProtocol.alice_bits_with_vacuum)
-        if self.own.destination == "Bob":
+        if len(COWProtocol.channel_list) != 0:
             alice_bits_with_vacuum_copy = deepcopy(COWProtocol.channel_list)
+        print(f"Total with vacuum: {len(alice_bits_with_vacuum_copy)} alice_bits_with_vacuum --  {alice_bits_with_vacuum_copy}  round -- {rounds}")
         COWProtocol.channel_list = []
         lightsource.custom_emit(alice_bits_with_vacuum_copy)
         for bit in alice_bits_with_vacuum_copy:
@@ -132,7 +131,7 @@ class COWProtocol(StackProtocol):
 
     def receive_node_messages(self, info):
         COWProtocol.channel_list.append((info['photon'], info['time']))
-        print(COWProtocol.channel_list)
+        print(f"length {len(COWProtocol.channel_list)} COWProtocol.channel_list {COWProtocol.channel_list}")
 
     def received_message(self, info):
         # Handle the detection time update from the detector
