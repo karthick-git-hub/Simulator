@@ -206,7 +206,7 @@ class QuantumChannel(OpticalChannel):
             pass
 
     def transmit_cow_or_three_stage(self, qubit: "Photon", protocol: str) -> None:
-        if random.random()  > self.loss:
+        if random.random() > self.loss:
             # COW protocol specific transmission logic
             future_time = self.timeline.now() + self.delay
             if random.random() > self.polarization_fidelity:
@@ -222,7 +222,7 @@ class QuantumChannel(OpticalChannel):
 
     def introduceErrorsForCow(self, qubit):
         updatedQubit = []
-        if random.random() < 0.1: #self.polarization_fidelity:
+        if random.random() > self.polarization_fidelity:
             if len(qubit) == 2 and isinstance(qubit[0][0], QuantumCircuit):
                 if qubit[0][0].data == []:
                     updatedQubit.append(self.qc_x)
@@ -250,7 +250,7 @@ class QuantumChannel(OpticalChannel):
             unitary_matrix = qubit.data[1].operation.params[0]
             qubits = qubit.data[1].qubits
 
-        if random.random() < 0.1: #self.polarization_fidelity:
+        if random.random() > self.polarization_fidelity:
             if isinstance(qubit, QuantumCircuit):
                 if len(qubit.data) == 1:
                     new_qc = deepcopy(self.qc_x)

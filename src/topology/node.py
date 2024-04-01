@@ -184,10 +184,13 @@ class Node(Entity):
                     self.components[self.first_component_name].detectors[0].getPhotonForThreeStage("detector1", qubit)
             elif isinstance(self.protocol_stack[0],COWProtocol):
                 if qubit[0][0] != []:
-                    if random.random() < 0.7:
-                       self.components[self.first_component_name].detectors[0].getPhoton("detector1", qubit[0])
+                    if self.name.startswith("Node"):
+                        self.components[self.first_component_name].detectors[0].getPhoton("detector1", qubit[0])
                     else:
-                        self.components[self.first_component_name].detectors[1].getPhoton("detector2", qubit[0])
+                        if random.random() < 0.7:
+                           self.components[self.first_component_name].detectors[0].getPhoton("detector1", qubit[0])
+                        else:
+                            self.components[self.first_component_name].detectors[1].getPhoton("detector2", qubit[0])
         else:
             self.components[self.first_component_name].get(qubit)
 
