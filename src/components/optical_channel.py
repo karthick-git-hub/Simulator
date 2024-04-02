@@ -8,6 +8,7 @@ OpticalChannels must be attached to nodes on both ends.
 import heapq as hq
 import math
 import random
+import re
 from copy import deepcopy
 from typing import TYPE_CHECKING
 
@@ -115,6 +116,7 @@ class QuantumChannel(OpticalChannel):
         self.qc_x.x(0)
         self.qc_amp_damp_error = QuantumCircuit(1)
         self.qc_amp_damp_error.append(QuantumError(amplitude_damping_error(self.polarization_fidelity)), [0])
+        self.counter = 0
 
     def init(self) -> None:
         """Implementation of Entity interface (see base class)."""
@@ -206,19 +208,31 @@ class QuantumChannel(OpticalChannel):
             pass
 
     def transmit_cow_or_three_stage(self, qubit: "Photon", protocol: str) -> None:
-        if random.random() > self.loss:
+        if 'qr' in self.name or (random.random() < 0.75 and self.counter == 0):
+            if 'qr' not in self.name:
+                print(f"in transmit before attaching QR {self.name} {self.counter}")
+                node_name = re.sub(r'node\d+', 'qr_\\g<0>', self.name)
+                self.name = node_name
+                print(f"in transmit after attaching QR {self.name}")
+            deep_copy_qubit = deepcopy(qubit)
+            process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
+            event = Event(self.timeline.now() + self.delay, process)
+            self.timeline.schedule(event)
+
+        if random.random() > self.loss and  'qr' not in self.name:
+            print(f" not in {self.name} {self.counter}")
             # COW protocol specific transmission logic
             future_time = self.timeline.now() + self.delay
             if random.random() > self.polarization_fidelity:
                 if protocol == "COW":
                     qubit = self.introduceErrorsForCow(qubit)
-               # else:
-                #     qubit = self.introduceErrorsForThreeStage(qubit)
+            # else:
+            #     qubit = self.introduceErrorsForThreeStage(qubit)
             deep_copy_qubit = deepcopy(qubit)
             process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
             event = Event(future_time, process)
             self.timeline.schedule(event)
-
+        self.counter += 1
 
     def introduceErrorsForCow(self, qubit):
         updatedQubit = []
@@ -239,7 +253,6 @@ class QuantumChannel(OpticalChannel):
             updatedQubit.append(self.qc_amp_damp_error)
             return (updatedQubit, qubit[1])
         return qubit
-
 
     def introduceErrorsForThreeStage(self, qubit):
         print(qubit)
@@ -264,7 +277,6 @@ class QuantumChannel(OpticalChannel):
             new_qc.append(UnitaryGate(unitary_matrix), qubits)
             return (new_qc)
         return qubit
-
 
     def schedule_transmit(self, min_time: int) -> int:
         """Method to schedule a time for photon transmission.

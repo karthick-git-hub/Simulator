@@ -64,7 +64,16 @@ def draw_network_diagram(nodes, edges, title, file_name):
     plt.close()
 
 
-@pytest.mark.parametrize("distance", range(1, 32, 2))
+def reset_qc_names(qc_alice_node1, qc_node1_node2, qc_node2_node3, qc_node3_node4, qc_node4_bob):
+    qc_alice_node1.name = "qc_alice_node1"
+    qc_node1_node2.name = "qc_node1_node2"
+    qc_node2_node3.name = "qc_node2_node3"
+    qc_node3_node4.name = "qc_node3_node4"
+    qc_node4_bob.name = "qc_node4_bob"
+    pass
+
+
+@pytest.mark.parametrize("distance", range(1, 52, 5))
 def test_cow_protocol(distance):
     clear_file_contents('round_details.txt')
     num_rounds = 100
@@ -98,11 +107,11 @@ def test_cow_protocol(distance):
     pair_cow_protocols(node4.protocol_stack[0], bob.protocol_stack[0])
 
     # Set up quantum channels in a ring topology
-    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
-    qc_node1_node2 = QuantumChannel("qc_node1_node2", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
-    qc_node2_node3 = QuantumChannel("qc_node2_node3", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
-    qc_node3_node4 = QuantumChannel("qc_node3_node4", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
-    qc_node4_bob = QuantumChannel("qc_node4_bob", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+    qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_node1_node2 = QuantumChannel("qc_node1_node2", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_node2_node3 = QuantumChannel("qc_node2_node3", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_node3_node4 = QuantumChannel("qc_node3_node4", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_node4_bob = QuantumChannel("qc_node4_bob", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
 
     qc_alice_node1.set_ends(alice, node1.name)
     qc_node1_node2.set_ends(node1, node2.name)
@@ -141,30 +150,40 @@ def test_cow_protocol(distance):
         tl.run()
         while not tl.events.isempty():
             tl.run()
+        if "qr" in qc_alice_node1.name:
+            print(f"Quantum Repeaters are attached between Alice and Node1 in {round}")
         print(f" Alice run done")
         node1.protocols[0].push(1, round)
         tl.run()
         while not tl.events.isempty():
             tl.run()
-
+        if "qr" in qc_node1_node2.name:
+            print(f"Quantum Repeaters are attached between Node1 and Node2 in {round}")
         print(f" Node1 run done")
         node2.protocols[0].push(1, round)
         tl.run()
         while not tl.events.isempty():
             tl.run()
+        if "qr" in qc_node2_node3.name:
+            print(f"Quantum Repeaters are attached between Node2 and Node3 in {round}")
         print(f" Node2 run done")
 
         node3.protocols[0].push(1, round)
         tl.run()
         while not tl.events.isempty():
             tl.run()
+        if "qr" in qc_node3_node4.name:
+            print(f"Quantum Repeaters are attached between Node3 and Node4 in {round}")
         print(f" Node3 run done")
 
         node4.protocols[0].push(1, round)
         tl.run()
         while not tl.events.isempty():
             tl.run()
+        if "qr" in qc_node4_bob.name:
+            print(f"Quantum Repeaters are attached between Node4 and Bob in {round}")
         print(f" Node4 run done")
+        reset_qc_names(qc_alice_node1, qc_node1_node2, qc_node2_node3, qc_node3_node4, qc_node4_bob)
 
         node4.protocols[0].begin_classical_communication()
 
