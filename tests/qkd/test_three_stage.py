@@ -27,7 +27,7 @@ def clear_files():
     clear_file_contents('result_3stage.txt')
 
 @pytest.mark.parametrize("distance", range(0, 1, 10))
-def test_cow_protocol(distance):
+def test_3stage_protocol(distance):
     clear_file_contents('round_details_3stage.txt')
     num_rounds = 10
     num_of_bits = 10
@@ -82,9 +82,9 @@ def test_cow_protocol(distance):
         tl.run()
         while not tl.events.isempty():
             tl.run()
-
-
         print(f"push 3 done")
+
+        alice.protocols[0].decoding()
         alice.protocols[0].begin_classical_communication()
 
     alice.protocols[0].end_of_round(distance * 3, num_rounds)

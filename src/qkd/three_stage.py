@@ -1,4 +1,5 @@
 import json
+import random
 from copy import deepcopy
 from datetime import datetime, timedelta
 
@@ -7,7 +8,7 @@ from qiskit import Aer, execute
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import UnitaryGate
 
-from protocol import StackProtocol
+from src.protocol import StackProtocol
 
 
 def pair_3stage_protocols(sender: "ThreeStageProtocol", receiver: "ThreeStageProtocol") -> None:
@@ -18,6 +19,8 @@ def pair_3stage_protocols(sender: "ThreeStageProtocol", receiver: "ThreeStagePro
 
 
 class ThreeStageProtocol(StackProtocol):
+    U_A = None
+    U_B = None
     key_rate = 0
     total_rounds = 0
     alice_bits = []
@@ -25,8 +28,8 @@ class ThreeStageProtocol(StackProtocol):
     channel_list = []
     detection_data = []
     iterations_passed = 0
-    U_A = None
-    U_B = None
+    bits_bob_received = []
+    sifting_percentage = []
 
     def __init__(self, own: "QKDNode", name, lightsource, qsdetector):
         super().__init__(own, name)
@@ -43,7 +46,6 @@ class ThreeStageProtocol(StackProtocol):
         self.alice_bits = np.random.choice([0, 1], bit_length)
         ThreeStageProtocol.U_A = self.generate_unitary()
         ThreeStageProtocol.U_B = self.generate_unitary()
-
 
     def send_pulse(self):
         current_time = datetime.now()
@@ -111,26 +113,23 @@ class ThreeStageProtocol(StackProtocol):
             raise AttributeError(f"Detector {self.qsdetector} not found in QKDNode components")
 
     def received_message(self, info):
-        # Handle the detection time update from the detector
-        print(f"inside received_message {info}")
         ThreeStageProtocol.detection_data.append(info['photon'])
 
+    def decoding(self):
+        self.decoding_bits(ThreeStageProtocol.detection_data)
 
-    def begin_classical_communication(self):
-        self.sifting_process(ThreeStageProtocol.detection_data)
-
-    def sifting_process(self, detection_data):
-        print(f" inside sifting_process")
-        bits_bob_received = []
+    def decoding_bits(self, detection_data):
+        print(f" inside decoding_bits")
+        ThreeStageProtocol.bits_bob_received = []
         for i, detection_data_bit in enumerate(detection_data):
             original_circuit, timestamp = detection_data_bit
             circuit_copy = deepcopy(original_circuit)
             U = np.conjugate(ThreeStageProtocol.U_B).T
             circuit_copy.append(UnitaryGate(U, label=f'U_transmission_{i}'), [0])
-            bits_bob_received.append((self.measure(circuit_copy), timestamp))
-        bits_bob_received = sorted(bits_bob_received, key=lambda x: x[1])
-        print(f"bits_bob_received {bits_bob_received} , ThreeStageProtocol.alice_bits {ThreeStageProtocol.alice_bits}")
-
+            ThreeStageProtocol.bits_bob_received.append((self.measure(circuit_copy), timestamp))
+        ThreeStageProtocol.bits_bob_received = sorted(ThreeStageProtocol.bits_bob_received, key=lambda x: x[1])
+        print(
+            f"bits_bob_received {ThreeStageProtocol.bits_bob_received} , ThreeStageProtocol.alice_bits {ThreeStageProtocol.alice_bits}")
 
     def measure(self, photon):
         bit_0 = self.calculateBitValue(photon)
@@ -145,6 +144,56 @@ class ThreeStageProtocol(StackProtocol):
             counts = result.get_counts(photon)
             measured_bit = list(counts.keys())[0][-1]  # Get the last character of the result key
             return int(measured_bit)  # Convert to integer (0 or 1)
+
+    def generate_random_bits(self, length):
+        self.random_bits = 0
+        if not isinstance(length, int):
+            raise TypeError("Length must be an integer")
+        if length <= 0:
+            return []
+        self.random_bits = max(1, round(length * 0.10))  # Calculate 10% of the length, ensuring at least 1 segment
+        print(f"generating random bits {self.random_bits} {length}")
+        random_bits = random.sample(range(length), self.random_bits)  # Generate unique random indices
+        return sorted(random_bits)  # Return the sorted list of random_bits
+
+    def begin_classical_communication(self):
+        ThreeStageProtocol.sifting_percentage = []
+        security_percentage = 0.0
+
+        sorted_alice_entries = sorted(ThreeStageProtocol.alice_bits, key=lambda x: x[1])
+        sorted_bob_entries = sorted(ThreeStageProtocol.bits_bob_received, key=lambda x: x[1])
+        print(f" sorted_alice_entries {sorted_alice_entries} \n sorted_bob_entries {sorted_bob_entries}")
+        # Create a set of Bob's timestamps for quick lookup
+        bob_timestamps = {bit[1] for bit in sorted_bob_entries}
+
+        # Filter Alice's bits to include only those with timestamps matching Bob's
+        raw_key_alice = [(bit, timestamp) for bit, timestamp in sorted_alice_entries if
+                              timestamp in bob_timestamps]
+
+        # Continue with the sifting process...
+        random_bits = self.generate_random_bits(len(sorted_bob_entries))
+        print("\nRandom bits for sifting:", random_bits)
+        sameFlagValue = 0
+        differentFlagValue = 0
+        if len(random_bits) > 0:
+            # Perform the sifting process
+            for index in random_bits:
+                if index < len(sorted_bob_entries):
+                    bob_bit, bob_timestamp = sorted_bob_entries[index]
+                    # Find the corresponding Alice bit using the timestamp
+                    alice_bit = next((bit for bit, time in raw_key_alice if time == bob_timestamp), None)
+                    print(f"Alice's bit: {alice_bit}, Bob's bit: {bob_bit} at {bob_timestamp}")
+                    if alice_bit == bob_bit:
+                        sameFlagValue += 1
+                    else:
+                        differentFlagValue += 1
+
+            print(f"Same: {sameFlagValue}, Different: {differentFlagValue}")
+            security_percentage = (sameFlagValue / len(random_bits)) * 100 if sameFlagValue > 0 else 0
+            print(f"security_percentage: {security_percentage}")
+
+        ThreeStageProtocol.sifting_percentage.append(security_percentage)
+
 
     def end_of_round(self, distance, num_rounds, file_name='round_details_3stage.txt', output_file='result_3stage.txt'):
         total_sifting_percentage = 0
