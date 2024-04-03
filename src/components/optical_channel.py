@@ -208,12 +208,7 @@ class QuantumChannel(OpticalChannel):
             pass
 
     def transmit_cow_or_three_stage(self, qubit: "Photon", protocol: str) -> None:
-        if 'qr' in self.name or (random.random() < 0.75 and self.counter == 0):
-            if 'qr' not in self.name:
-                print(f"in transmit before attaching QR {self.name} {self.counter}")
-                node_name = re.sub(r'node\d+', 'qr_\\g<0>', self.name)
-                self.name = node_name
-                print(f"in transmit after attaching QR {self.name}")
+        if 'qr' in self.name:
             deep_copy_qubit = deepcopy(qubit)
             process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
             event = Event(self.timeline.now() + self.delay, process)

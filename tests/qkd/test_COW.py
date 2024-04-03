@@ -1,3 +1,5 @@
+import random
+
 import pytest
 from src.qkd.COW import pair_cow_protocols
 from src.components.optical_channel import QuantumChannel, ClassicalChannel
@@ -76,8 +78,8 @@ def reset_qc_names(qc_alice_node1, qc_node1_node2, qc_node2_node3, qc_node3_node
 @pytest.mark.parametrize("distance", range(1, 52, 5))
 def test_cow_protocol(distance):
     clear_file_contents('round_details.txt')
-    num_rounds = 100
-    num_of_bits = 100
+    num_rounds = 1000
+    num_of_bits = 200
     tl = Timeline(1e12)
     tl.seed(1)
 
@@ -113,6 +115,26 @@ def test_cow_protocol(distance):
     qc_node3_node4 = QuantumChannel("qc_node3_node4", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
     qc_node4_bob = QuantumChannel("qc_node4_bob", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
 
+    if random.random() < 0.75 and random.random() < 0.75:
+        qc_alice_node1 = tl.get_entity_by_name("qc_alice_node1")
+        qc_alice_node1.name = "qc_alice_qr_node1"
+        qc_alice_node1.__setattr__("attenuation", 0.0)
+    if random.random() < 0.75 and random.random() < 0.75:
+        qc_node1_node2 = tl.get_entity_by_name("qc_node1_node2")
+        qc_node1_node2.name = "qc_node1_qr_node2"
+        qc_node1_node2.__setattr__("attenuation", 0.0)
+    if random.random() < 0.75 and random.random() < 0.75:
+        qc_node2_node3 = tl.get_entity_by_name("qc_node2_node3")
+        qc_node2_node3.name = "qc_node2_qr_node3"
+        qc_node2_node3.__setattr__("attenuation", 0.0)
+    if random.random() < 0.75 and random.random() < 0.75:
+        qc_node1_node2 = tl.get_entity_by_name("qc_node3_node4")
+        qc_node3_node4.name = "qc_node3_qr_node4"
+        qc_node3_node4.__setattr__("attenuation", 0.0)
+    if random.random() < 0.75 and random.random() < 0.75:
+        qc_node1_node2 = tl.get_entity_by_name("qc_node4_bob")
+        qc_node4_bob.name = "qc_node4_qr_bob"
+        qc_node4_bob.__setattr__("attenuation", 0.0)
     qc_alice_node1.set_ends(alice, node1.name)
     qc_node1_node2.set_ends(node1, node2.name)
     qc_node2_node3.set_ends(node2, node3.name)
