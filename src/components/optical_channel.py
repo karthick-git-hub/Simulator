@@ -221,8 +221,8 @@ class QuantumChannel(OpticalChannel):
             if random.random() > self.polarization_fidelity:
                 if protocol == "COW":
                     qubit = self.introduceErrorsForCow(qubit)
-            # else:
-            #     qubit = self.introduceErrorsForThreeStage(qubit)
+                else:
+                    qubit = self.introduceErrorsForThreeStage(qubit)
             deep_copy_qubit = deepcopy(qubit)
             process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
             event = Event(future_time, process)
