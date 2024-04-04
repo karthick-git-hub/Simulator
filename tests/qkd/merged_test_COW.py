@@ -1,6 +1,33 @@
 from collections import deque
-
 import numpy as np
+import random
+import pytest
+from src.qkd.COW import pair_cow_protocols
+from src.components.optical_channel import QuantumChannel, ClassicalChannel
+from src.kernel.timeline import Timeline
+from src.topology.node import QKDNode
+from src.protocol import Protocol
+import matplotlib
+matplotlib.use('Agg')  # Use a non-GUI backend to prevent Tkinter errors
+import matplotlib.pyplot as plt
+import networkx as nx
+
+# Global variables to hold the quantum channels and nodes
+quantum_channels = []
+qkd_nodes = []
+tl = Timeline(1e12)
+tl.seed(1)
+counter = 0
+
+class Parent(Protocol):
+    def __init__(self, own, length, name):
+        super().__init__(own, name)
+        self.upper_protocols = []
+        self.lower_protocols = []
+        self.length = length
+
+    def received_message(self):
+        pass
 
 
 def generate_adjacency_matrix(topology, m):
@@ -129,30 +156,6 @@ def shortest_path_length_bfs(adjacency_matrix, start_node, end_node):
     nonodes = len(path) - 2 if path[0] == start_node and len(path) > 1 else 0
     return nonodes
 
-
-import random
-
-import pytest
-from src.qkd.COW import pair_cow_protocols
-from src.components.optical_channel import QuantumChannel, ClassicalChannel
-from src.kernel.timeline import Timeline
-from src.topology.node import QKDNode
-from src.protocol import Protocol
-import matplotlib
-matplotlib.use('Agg')  # Use a non-GUI backend to prevent Tkinter errors
-import matplotlib.pyplot as plt
-import networkx as nx
-
-class Parent(Protocol):
-    def __init__(self, own, length, name):
-        super().__init__(own, name)
-        self.upper_protocols = []
-        self.lower_protocols = []
-        self.length = length
-
-    def received_message(self):
-        pass
-
 def clear_file_contents(file_name):
     with open(file_name, 'w') as file:
         file.write('')
@@ -161,6 +164,25 @@ def clear_file_contents(file_name):
 def clear_files():
     clear_file_contents('result.txt')
 
+@pytest.fixture(scope="module")
+def setup_network():
+    global quantum_channels, qkd_nodes, tl, counter
+
+    topology = 'grid'
+    matrix_size = 4
+    nodes_count = get_nodes(topology, matrix_size)
+
+    if not qkd_nodes:
+        qkd_nodes = [QKDNode(f"Node{i}", tl, stack_size=3) for i in range(nodes_count)]
+        qkd_nodes.insert(0, QKDNode("Alice", tl, stack_size=3))
+        qkd_nodes.append(QKDNode("Bob", tl, stack_size=3))
+
+    if not quantum_channels:
+        for i in range(len(qkd_nodes) - 1):
+            channel_name = f"qc_{qkd_nodes[i].name}_{qkd_nodes[i + 1].name}"
+            channel = QuantumChannel(channel_name, tl, distance=10, attenuation=0.1, polarization_fidelity=0.8)
+            quantum_channels.append(channel)
+            channel.set_ends(qkd_nodes[i], qkd_nodes[i + 1].name)
 
 def draw_network_diagram(nodes, edges, title, file_name):
     # Create a directed graph
@@ -208,37 +230,11 @@ def reset_qc_names(qc_alice_node1, qc_node1_node2, qc_node2_node3, qc_node3_node
 
 
 @pytest.mark.parametrize("distance", range(1, 52, 5))
-def test_cow_protocol(distance):
+def test_cow_protocol(setup_network, distance):
+    global quantum_channels, qkd_nodes, tl, counter
     clear_file_contents('round_details.txt')
     num_rounds = 100
     num_of_bits = 100
-    tl = Timeline(1e12)
-    tl.seed(1)
-
-    # Example usage of the generated nodes
-    topology = 'grid'
-    matrix_size = 4  # Assuming a 4x4 grid for simplicity
-    nodes_count = get_nodes(topology, matrix_size)
-    print(nodes_count)
-
-    # Dynamically create QKD nodes
-    qkd_nodes = []
-    for i in range(nodes_count):  # +2 for Alice and Bob
-        if i == 0:
-            node = QKDNode("Alice", tl, stack_size=3)
-        elif i == nodes_count -1:
-            node = QKDNode("Bob", tl, stack_size=3)
-        else:
-            node = QKDNode(f"Node{i}", tl, stack_size=3)
-        qkd_nodes.append(node)
-
-    # Include the additional nodes in the diagram and topology
-    nodes = [node.name for node in qkd_nodes]
-    edges = []
-    for i in range(len(qkd_nodes) - 1):
-        edges.append((qkd_nodes[i].name, qkd_nodes[i + 1].name))
-    diagram_file_name = 'network_diagram.png'
-    draw_network_diagram(nodes, edges, "Network Diagram for QKD System using COW Protocol", diagram_file_name)
 
     # Assuming qkd_nodes contains all the nodes, including Alice and Bob
     for i, node in enumerate(qkd_nodes):
@@ -249,24 +245,17 @@ def test_cow_protocol(distance):
     for i in range(len(qkd_nodes) - 1):
         pair_cow_protocols(qkd_nodes[i].protocol_stack[0], qkd_nodes[i + 1].protocol_stack[0])
 
-    # Assuming qkd_nodes contains all the nodes including Alice and Bob
-    quantum_channels = []
-    for i in range(len(qkd_nodes) - 1):
-        channel_name = f"qc_{qkd_nodes[i].name}_{qkd_nodes[i + 1].name}"
-        channel = QuantumChannel(channel_name, tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
-        quantum_channels.append(channel)
-        channel.set_ends(qkd_nodes[i], qkd_nodes[i + 1].name)
-
-    for channel in quantum_channels:
-        # Apply quantum repeater logic with a certain probability
-        if random.random() < 0.75 and random.random() < 0.75:
-            # Assuming `tl` has a method `get_entity_by_name` to fetch the channel entity
-            qc = tl.get_entity_by_name(channel.name)
-            if qc:
-                qr_name = f"{channel.name}_qr"
-                qc.name = qr_name
-                qc.__setattr__("attenuation", 0.0)
-
+    if counter == 0:
+        for channel in quantum_channels[1:]:
+            # Apply quantum repeater logic with a certain probability
+            if random.random() < 0.75 and random.random() < 0.75:
+                # Assuming `tl` has a method `get_entity_by_name` to fetch the channel entity
+                qc = tl.get_entity_by_name(channel.name)
+                if qc:
+                    qr_name = f"{channel.name}_qr"
+                    qc.name = qr_name
+                    qc.__setattr__("attenuation", 0.0)
+    counter += 1
     parent_protocols = []
     for i, node in enumerate(qkd_nodes):
         parent_protocol = Parent(node, 128, f"parent_{node.name}")
@@ -292,4 +281,23 @@ def test_cow_protocol(distance):
         alice.protocols[0].begin_classical_communication()
 
     alice.protocols[0].end_of_round(distance * 5, num_rounds)
+
+    nodes_for_diagram = []
+    for i, node in enumerate(qkd_nodes):
+        # Assume each node has a list or dict of channels; we check each one
+        is_quantum_repeater = any('qr' in channel.name for channel in node.qchannels.values())
+
+        # If a quantum repeater is attached, we set the node's name in the diagram to "Quantum Repeater"
+        node_name_for_diagram = f"Quantum Repeater {i}" if is_quantum_repeater else node.name
+        nodes_for_diagram.append(node_name_for_diagram)
+
+    # Prepare the edges for the network diagram
+    edges = []
+    for i in range(len(qkd_nodes) - 1):
+        edges.append((nodes_for_diagram[i], nodes_for_diagram[i + 1]))
+    # Draw the network diagram
+    diagram_file_name = 'network_diagram.png'
+    draw_network_diagram(nodes_for_diagram, edges, "Network Diagram for QKD System using COW Protocol",
+                         diagram_file_name)
+
 
