@@ -8,7 +8,6 @@ OpticalChannels must be attached to nodes on both ends.
 import heapq as hq
 import math
 import random
-import re
 from copy import deepcopy
 from typing import TYPE_CHECKING
 
@@ -17,7 +16,7 @@ from qiskit.circuit.library import UnitaryGate
 from qiskit_aer.noise import QuantumError
 from qiskit_aer.noise.errors import amplitude_damping_error
 
-from protocol import StackProtocol
+from ..protocol import StackProtocol
 
 if TYPE_CHECKING:
     from ..kernel.timeline import Timeline
@@ -116,7 +115,6 @@ class QuantumChannel(OpticalChannel):
         self.qc_x.x(0)
         self.qc_amp_damp_error = QuantumCircuit(1)
         self.qc_amp_damp_error.append(QuantumError(amplitude_damping_error(self.polarization_fidelity)), [0])
-        self.counter = 0
 
     def init(self) -> None:
         """Implementation of Entity interface (see base class)."""
@@ -208,14 +206,7 @@ class QuantumChannel(OpticalChannel):
             pass
 
     def transmit_cow_or_three_stage(self, qubit: "Photon", protocol: str) -> None:
-        if 'qr' in self.name:
-            deep_copy_qubit = deepcopy(qubit)
-            process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
-            event = Event(self.timeline.now() + self.delay, process)
-            self.timeline.schedule(event)
-
-        if random.random() > self.loss and  'qr' not in self.name:
-            print(f" not in {self.name} {self.counter}")
+        if random.random() > self.loss:
             # COW protocol specific transmission logic
             future_time = self.timeline.now() + self.delay
             if random.random() > self.polarization_fidelity:
@@ -227,13 +218,12 @@ class QuantumChannel(OpticalChannel):
             process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
             event = Event(future_time, process)
             self.timeline.schedule(event)
-        self.counter += 1
 
     def introduceErrorsForCow(self, qubit):
         updatedQubit = []
         if random.random() > self.polarization_fidelity:
             if len(qubit) == 2 and isinstance(qubit[0][0], QuantumCircuit):
-                if qubit[0][0].data == []:
+                if not qubit[0][0].data:
                     updatedQubit.append(self.qc_x)
                     updatedQubit.append(qubit[0][1])
                     updatedQubit.append(self.qc_x)
@@ -241,36 +231,37 @@ class QuantumChannel(OpticalChannel):
                     updatedQubit.append(self.qc)
                     updatedQubit.append(qubit[0][1])
                     updatedQubit.append(self.qc)
-                return (updatedQubit, qubit[1])
+                return updatedQubit, qubit[1]
         else:
             updatedQubit.append(self.qc_amp_damp_error)
             updatedQubit.append(qubit[0][1])
             updatedQubit.append(self.qc_amp_damp_error)
-            return (updatedQubit, qubit[1])
+            return updatedQubit, qubit[1]
         return qubit
 
     def introduceErrorsForThreeStage(self, qubit):
         print(qubit)
-        if len(qubit.data) == 1:
-            unitary_matrix = qubit.data[0].operation.params[0]
-            qubits = qubit.data[0].qubits
+        if len(qubit[0].data) == 1:
+            unitary_matrix = qubit[0].data[0].operation.params[0]
+            qubits = qubit[0].data[0].qubits
         else:
-            unitary_matrix = qubit.data[1].operation.params[0]
-            qubits = qubit.data[1].qubits
+            unitary_matrix = qubit[0].data[1].operation.params[0]
+            qubits = qubit[0].data[1].qubits
 
         if random.random() > self.polarization_fidelity:
-            if isinstance(qubit, QuantumCircuit):
-                if len(qubit.data) == 1:
+            if isinstance(qubit[0], QuantumCircuit):
+                if len(qubit[0].data) == 1:
                     new_qc = deepcopy(self.qc_x)
                     new_qc.append(UnitaryGate(unitary_matrix), qubits)
-                elif qubit.data[0].operation.name == "x":
+                    return new_qc, qubit[1]
+                elif qubit[0].data[0].operation.name == "x":
                     new_qc = deepcopy(self.qc)
                     new_qc.append(UnitaryGate(unitary_matrix), qubits)
-                return (new_qc)
+                    return new_qc, qubit[1]
         else:
             new_qc = deepcopy(self.qc_amp_damp_error)
             new_qc.append(UnitaryGate(unitary_matrix), qubits)
-            return (new_qc)
+            return new_qc, qubit[1]
         return qubit
 
     def schedule_transmit(self, min_time: int) -> int:

@@ -30,6 +30,8 @@ class ThreeStageProtocol(StackProtocol):
     iterations_passed = 0
     bits_bob_received = []
     sifting_percentage = []
+    round_number = 0
+    round_details = {}
 
     def __init__(self, own: "QKDNode", name, lightsource, qsdetector):
         super().__init__(own, name)
@@ -119,7 +121,6 @@ class ThreeStageProtocol(StackProtocol):
         self.decoding_bits(ThreeStageProtocol.detection_data)
 
     def decoding_bits(self, detection_data):
-        print(f" inside decoding_bits")
         ThreeStageProtocol.bits_bob_received = []
         for i, detection_data_bit in enumerate(detection_data):
             original_circuit, timestamp = detection_data_bit
@@ -168,7 +169,7 @@ class ThreeStageProtocol(StackProtocol):
 
         # Filter Alice's bits to include only those with timestamps matching Bob's
         raw_key_alice = [(bit, timestamp) for bit, timestamp in sorted_alice_entries if
-                              timestamp in bob_timestamps]
+                         timestamp in bob_timestamps]
 
         # Continue with the sifting process...
         random_bits = self.generate_random_bits(len(sorted_bob_entries))
@@ -193,7 +194,96 @@ class ThreeStageProtocol(StackProtocol):
             print(f"security_percentage: {security_percentage}")
 
         ThreeStageProtocol.sifting_percentage.append(security_percentage)
+        self.discard_bits_post_sifting(random_bits, raw_key_alice, sorted_bob_entries)
 
+    def discard_bits_post_sifting(self, random_bits, raw_key_alice, raw_key_bob):
+        sorted_random_bits = sorted(random_bits, reverse=True)
+        print("\nBefore discarding")
+        print("\n length -- ", len(raw_key_alice), "self.raw_key_alice", raw_key_alice)
+        print("\n length -- ", len(raw_key_bob), "self.raw_key_bob", raw_key_bob)
+        for index in sorted_random_bits:
+            if index < len(raw_key_alice):  # Check to avoid index out of range
+                raw_key_alice.pop(index)
+
+        for index in sorted_random_bits:
+            if index < len(raw_key_bob):  # Check to avoid index out of range
+                raw_key_bob.pop(index)
+
+        print("\nAfter discarding")
+        print("\n length -- ", len(raw_key_alice), "self.raw_key_alice", raw_key_alice)
+        print("\n length -- ", len(raw_key_bob), "self.raw_key_bob", raw_key_bob)
+        self.parity_check(raw_key_alice, raw_key_bob)
+
+    def parity_check(self, raw_key_alice, raw_key_bob):
+        alice_parity_list = []
+        bob_parity_list = []
+        matched_alice_bits = []
+        matched_bob_bits = []
+        ThreeStageProtocol.key_rate = 0
+        ThreeStageProtocol.round_number += 1
+        print(f"raw_key_alice {raw_key_alice} ")
+        print(f"raw_key_bob {raw_key_bob} ")
+
+        def calculate_parity(bits):
+            return "even" if sum(bits) % 2 == 0 else "odd"
+
+        # Calculate parity for Alice's bits in blocks of 3
+        for i in range(0, len(raw_key_alice), 3):
+            alice_bits = [bit for bit, _ in raw_key_alice[i:i + 3]]
+            alice_parity = calculate_parity(alice_bits.copy())
+            alice_parity_list.append(alice_parity)
+        # Calculate parity for Bob's bits in blocks of 3
+        for i in range(0, len(raw_key_bob), 3):
+            bob_bits = [bit for bit, _ in raw_key_bob[i:i + 3]]
+            bob_parity = calculate_parity(bob_bits.copy())
+            bob_parity_list.append(bob_parity)
+
+        # Initialize match count
+        matches = 0
+        # Compare the parity lists directly and count matches
+        for i, (a_parity, b_parity) in enumerate(zip(alice_parity_list, bob_parity_list)):
+            if a_parity == b_parity:
+                matches += 1
+                # Calculate start and end indices for actual bits (without padding)
+                start_idx = i * 3
+                end_idx = start_idx + 3
+                # Store the actual bits, excluding the runtime appended 0s
+                matched_alice_bits.append(
+                    [raw_key_alice[j][0] for j in range(start_idx, min(end_idx, len(raw_key_alice)))])
+                matched_bob_bits.append(
+                    [raw_key_bob[j][0] for j in range(start_idx, min(end_idx, len(raw_key_bob)))])
+        print("\n Matches: ", matches)
+        ThreeStageProtocol.key_rate = (self.count_elements(matched_bob_bits) / (
+                    len(ThreeStageProtocol.alice_bits_encoded) + 0.1 * len(
+                ThreeStageProtocol.alice_bits_encoded))) if len(ThreeStageProtocol.alice_bits_encoded) > 0 else 0
+
+        print(f"Explicit parity check success rate: {ThreeStageProtocol.key_rate}%")
+        print(f"Length: {len(matched_alice_bits)} Matched Alice bits: {matched_alice_bits}")
+        print(f"Length: {len(matched_bob_bits)} Matched Bob bits:  {matched_bob_bits}")
+        self.print_details()
+
+    def count_elements(self, nested_list):
+        count = 0
+        for element in nested_list:
+            if isinstance(element, list):
+                count += self.count_elements(element)
+            else:
+                count += 1
+        return count
+
+    def print_details(self, file_name='round_details_3stage.txt'):
+        round_number = ThreeStageProtocol.round_number
+        details = {
+            'sifting_percentage': ThreeStageProtocol.sifting_percentage[-1],
+            'key_rate': ThreeStageProtocol.key_rate,
+            'time': datetime.now().strftime("%d-%b-%Y %H:%M:%S.%f")[:-3]
+        }
+
+        ThreeStageProtocol.round_details[round_number] = details
+
+        with open(file_name, 'a') as file:
+            file.write(f"Round {round_number}: ")
+            file.write(json.dumps(details) + '\n')
 
     def end_of_round(self, distance, num_rounds, file_name='round_details_3stage.txt', output_file='result_3stage.txt'):
         total_sifting_percentage = 0

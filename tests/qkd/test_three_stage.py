@@ -45,9 +45,9 @@ def test_3stage_protocol(distance):
     pair_3stage_protocols(bob.protocol_stack[0], alice.protocol_stack[0])
     pair_3stage_protocols(alice.protocol_stack[0], bob.protocol_stack[0])
 
-    qc_alice_bob = QuantumChannel("qc_alice_bob", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
-    qc_bob_alice = QuantumChannel("qc_bob_alice", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
-    qc_alice_bob_1 = QuantumChannel("qc_alice_bob_1", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+    qc_alice_bob = QuantumChannel("qc_alice_bob", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+    qc_bob_alice = QuantumChannel("qc_bob_alice", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+    qc_alice_bob_1 = QuantumChannel("qc_alice_bob_1", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
 
     qc_alice_bob.set_ends(alice, bob.name)
     qc_bob_alice.set_ends(bob, alice.name)
