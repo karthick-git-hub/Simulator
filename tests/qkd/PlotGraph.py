@@ -31,7 +31,7 @@ def plot_graphs(file_path):
     plt.xlabel('Distance')
     plt.ylabel('Average Key Rate')
     plt.grid(True)
-    plt.ylim(0, 1)
+    plt.ylim(0, 0.7)
     plt.legend()
     plt.savefig('key_rate_over_distance.png')  # Save the plot as a PNG file
     plt.show()  # This might not display in non-interactive environments

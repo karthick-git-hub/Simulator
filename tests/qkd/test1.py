@@ -1,3 +1,8 @@
+from collections import deque
+
+import numpy as np
+
+
 def generate_adjacency_matrix(topology, m):
     n = m;
     size = n * n
