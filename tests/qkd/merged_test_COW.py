@@ -245,16 +245,21 @@ def test_cow_protocol(setup_network, distance):
     for i in range(len(qkd_nodes) - 1):
         pair_cow_protocols(qkd_nodes[i].protocol_stack[0], qkd_nodes[i + 1].protocol_stack[0])
 
+    for channel in quantum_channels:
+        qc = tl.get_entity_by_name(channel.name)
+        if qc:
+            # Set distance for all the channels
+            qc.__setattr__("distance", distance)
+
     if counter == 0:
+        # Now, handle the attenuation separately for 2nd to last channels
         for channel in quantum_channels[1:]:
-            # Apply quantum repeater logic with a certain probability
-            if random.random() < 0.75 and random.random() < 0.75:
-                # Assuming `tl` has a method `get_entity_by_name` to fetch the channel entity
-                qc = tl.get_entity_by_name(channel.name)
-                if qc:
-                    qr_name = f"{channel.name}_qr"
-                    qc.name = qr_name
-                    qc.__setattr__("attenuation", 0.0)
+            qc = tl.get_entity_by_name(channel.name)
+            if qc and random.random() < 0.75 and random.random() < 0.75:
+                # Apply quantum repeater logic for 2nd to last channels
+                qc.__setattr__("attenuation", 0.0)
+                qc.__setattr__("isQr", True)
+
     counter += 1
     parent_protocols = []
     for i, node in enumerate(qkd_nodes):
@@ -285,7 +290,7 @@ def test_cow_protocol(setup_network, distance):
     nodes_for_diagram = []
     for i, node in enumerate(qkd_nodes):
         # Assume each node has a list or dict of channels; we check each one
-        is_quantum_repeater = any('qr' in channel.name for channel in node.qchannels.values())
+        is_quantum_repeater = any(channel.isQr for channel in node.qchannels.values())
 
         # If a quantum repeater is attached, we set the node's name in the diagram to "Quantum Repeater"
         node_name_for_diagram = f"Quantum Repeater {i}" if is_quantum_repeater else node.name

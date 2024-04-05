@@ -108,6 +108,7 @@ class QuantumChannel(OpticalChannel):
 
         super().__init__(name, timeline, attenuation, distance, polarization_fidelity, light_speed)
         self.delay = -1
+        self.isQr = False
         self.loss = 1
         self.frequency = frequency  # maximum frequency for sending qubits (measured in Hz)
         self.send_bins = []
@@ -209,6 +210,11 @@ class QuantumChannel(OpticalChannel):
 
     def transmit_cow_or_three_stage(self, qubit: "Photon", protocol: str) -> None:
         if 'qr' in self.name:
+            if random.random() > self.polarization_fidelity:
+                if protocol == "COW":
+                    qubit = self.introduceErrorsForCow(qubit)
+                else:
+                    qubit = self.introduceErrorsForThreeStage(qubit)
             deep_copy_qubit = deepcopy(qubit)
             process = Process(self.receiver, "receive_qubit", [deep_copy_qubit])
             event = Event(self.timeline.now() + self.delay, process)
@@ -230,6 +236,7 @@ class QuantumChannel(OpticalChannel):
         self.counter += 1
 
     def introduceErrorsForCow(self, qubit):
+        print(f" inside error for COW git ")
         updatedQubit = []
         if random.random() > self.polarization_fidelity:
             if len(qubit) == 2 and isinstance(qubit[0][0], QuantumCircuit):

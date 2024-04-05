@@ -19,6 +19,7 @@ def plot_graphs(file_path):
     plt.xlabel('Distance A-B')
     plt.ylabel('Sifting Success Rate')
     plt.grid(True)
+    plt.ylim(0, 100)
     plt.legend()
     plt.savefig('sifting_percentage_over_distance.png')  # Save the plot as a PNG file
     plt.show()  # This might not display in non-interactive environments
@@ -30,6 +31,7 @@ def plot_graphs(file_path):
     plt.xlabel('Distance')
     plt.ylabel('Average Key Rate')
     plt.grid(True)
+    plt.ylim(0, 1)
     plt.legend()
     plt.savefig('key_rate_over_distance.png')  # Save the plot as a PNG file
     plt.show()  # This might not display in non-interactive environments

@@ -1,6 +1,0 @@
-{
-    "105": {
-        "average_sifting_percentage": 70.0,
-        "average_key_rate": 0.06688311688311688
-    }
-}
