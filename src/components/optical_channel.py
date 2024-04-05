@@ -285,7 +285,7 @@ class QuantumChannel(OpticalChannel):
 
         Quantum Channels are limited by a frequency of transmission.
         This method returns the next available time for transmitting a photon.
-        
+
         Args:
             min_time (int): minimum simulation time for transmission.
 
