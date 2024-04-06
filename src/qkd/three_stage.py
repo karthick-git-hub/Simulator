@@ -92,7 +92,7 @@ class ThreeStageProtocol(StackProtocol):
             U = ThreeStageProtocol.U_B
             if ThreeStageProtocol.iterations_passed == 3:
                 U = np.conjugate(ThreeStageProtocol.U_A).T
-
+        print(f"length -- {len(alice_bits_encoded_copy)} alice_bits_encoded_copy- {alice_bits_encoded_copy}")
         ThreeStageProtocol.detection_data = []
         for i, alice_bit in enumerate(alice_bits_encoded_copy):
             original_bit, timestamp = alice_bit
@@ -119,6 +119,7 @@ class ThreeStageProtocol(StackProtocol):
 
     def decoding(self):
         self.decoding_bits(ThreeStageProtocol.detection_data)
+        ThreeStageProtocol.iterations_passed = 0
 
     def decoding_bits(self, detection_data):
         ThreeStageProtocol.bits_bob_received = []
@@ -130,7 +131,8 @@ class ThreeStageProtocol(StackProtocol):
             ThreeStageProtocol.bits_bob_received.append((self.measure(circuit_copy), timestamp))
         ThreeStageProtocol.bits_bob_received = sorted(ThreeStageProtocol.bits_bob_received, key=lambda x: x[1])
         print(
-            f"bits_bob_received {ThreeStageProtocol.bits_bob_received} , ThreeStageProtocol.alice_bits {ThreeStageProtocol.alice_bits}")
+            f"length -- {len(ThreeStageProtocol.bits_bob_received)}  bits_bob_received {ThreeStageProtocol.bits_bob_received} \n, "
+            f"length -- {len(ThreeStageProtocol.alice_bits)}  ThreeStageProtocol.alice_bits {ThreeStageProtocol.alice_bits}")
 
     def measure(self, photon):
         bit_0 = self.calculateBitValue(photon)
@@ -163,7 +165,8 @@ class ThreeStageProtocol(StackProtocol):
 
         sorted_alice_entries = sorted(ThreeStageProtocol.alice_bits, key=lambda x: x[1])
         sorted_bob_entries = sorted(ThreeStageProtocol.bits_bob_received, key=lambda x: x[1])
-        print(f" sorted_alice_entries {sorted_alice_entries} \n sorted_bob_entries {sorted_bob_entries}")
+        print(f"length -- {len(sorted_alice_entries)} sorted_alice_entries {sorted_alice_entries} \n "
+              f"length -- {len(sorted_bob_entries)} sorted_bob_entries {sorted_bob_entries}")
         # Create a set of Bob's timestamps for quick lookup
         bob_timestamps = {bit[1] for bit in sorted_bob_entries}
 

@@ -221,7 +221,6 @@ class QuantumChannel(OpticalChannel):
             self.timeline.schedule(event)
 
         if random.random() > self.loss and  'qr' not in self.name:
-            print(f" not in {self.name} {self.counter}")
             # COW protocol specific transmission logic
             future_time = self.timeline.now() + self.delay
             if random.random() > self.polarization_fidelity:
@@ -258,26 +257,27 @@ class QuantumChannel(OpticalChannel):
 
     def introduceErrorsForThreeStage(self, qubit):
         print(qubit)
-        if len(qubit.data) == 1:
-            unitary_matrix = qubit.data[0].operation.params[0]
-            qubits = qubit.data[0].qubits
+        if len(qubit[0].data) == 1:
+            unitary_matrix = qubit[0].data[0].operation.params[0]
+            qubits = qubit[0].data[0].qubits
         else:
-            unitary_matrix = qubit.data[1].operation.params[0]
-            qubits = qubit.data[1].qubits
+            unitary_matrix = qubit[0].data[1].operation.params[0]
+            qubits = qubit[0].data[1].qubits
 
         if random.random() > self.polarization_fidelity:
-            if isinstance(qubit, QuantumCircuit):
-                if len(qubit.data) == 1:
+            if isinstance(qubit[0], QuantumCircuit):
+                if len(qubit[0].data) == 1:
                     new_qc = deepcopy(self.qc_x)
                     new_qc.append(UnitaryGate(unitary_matrix), qubits)
-                elif qubit.data[0].operation.name == "x":
+                    return new_qc, qubit[1]
+                elif qubit[0].data[0].operation.name == "x":
                     new_qc = deepcopy(self.qc)
                     new_qc.append(UnitaryGate(unitary_matrix), qubits)
-                return (new_qc)
+                    return new_qc, qubit[1]
         else:
             new_qc = deepcopy(self.qc_amp_damp_error)
             new_qc.append(UnitaryGate(unitary_matrix), qubits)
-            return (new_qc)
+            return new_qc, qubit[1]
         return qubit
 
     def schedule_transmit(self, min_time: int) -> int:
