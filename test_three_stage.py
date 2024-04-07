@@ -1,3 +1,4 @@
+
 import pytest
 from src.components.optical_channel import QuantumChannel, ClassicalChannel
 
@@ -69,11 +70,11 @@ def draw_network_diagram(nodes, edges, title, file_name):
     plt.close()
 
 
-@pytest.mark.parametrize("distance", range(1, 32, 5))
+@pytest.mark.parametrize("distance", range(1, 52, 5))
 def test_3stage_protocol(distance):
     clear_file_contents('round_details_3stage.txt')
-    num_rounds = 10
-    num_of_bits = 100
+    num_rounds = 200
+    num_of_bits = 200
     tl = Timeline(1e12)
     tl.seed(1)
 
@@ -93,12 +94,18 @@ def test_3stage_protocol(distance):
     pair_3stage_protocols(alice.protocol_stack[0], node1.protocol_stack[0])
     pair_3stage_protocols(node1.protocol_stack[0], bob.protocol_stack[0])
 
+<<<<<<< HEAD
     qc_alice_node1 = QuantumChannel("qc_alice_node1", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
     qc_node1_bob = QuantumChannel("qc_node1_bob", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
     qc_bob_node1 = QuantumChannel("qc_bob_node1", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
     qc_node1_alice = QuantumChannel("qc_node1_alice", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
     qc_alice_node1_1 = QuantumChannel("qc_alice_node1_1", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
     qc_node1_bob_1 = QuantumChannel("qc_node1_bob_1", tl, distance=distance, attenuation=0.1, polarization_fidelity=0.8)
+=======
+    qc_alice_bob = QuantumChannel("qc_alice_bob", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+    qc_bob_alice = QuantumChannel("qc_bob_alice", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+    qc_alice_bob_1 = QuantumChannel("qc_alice_bob_1", tl, distance=distance, attenuation=0.05, polarization_fidelity=0.8)
+>>>>>>> f2d7068 (Updated the 3 stage code)
 
     qc_alice_node1.set_ends(alice, node1.name)
     qc_node1_bob.set_ends(node1, bob.name)
