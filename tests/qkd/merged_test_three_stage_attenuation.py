@@ -196,6 +196,7 @@ def setup_network():
             channel = QuantumChannel(channel_name, tl, distance=10, attenuation=0.1, polarization_fidelity=0.8)
             quantum_channels.append(channel)
             channel.set_ends(qkd_nodes[i], qkd_nodes[i + 1].name)
+            print(channel_name)
             channel_counter += 1
 
         # Second pass: Bob to Alice
@@ -252,17 +253,17 @@ def draw_network_diagram(nodes, edges, title, file_name):
     plt.savefig(file_name, format='PNG', bbox_inches='tight')
     plt.close()
 
-
+@pytest.mark.parametrize("attenuation", attenuation_values)
 @pytest.mark.parametrize("distance", range(1, 52, 5))
-def test_3stage_protocol(distance, setup_network):
+def test_3stage_protocol(setup_network, distance, attenuation):
     global quantum_channels, qkd_nodes, tl, counter
     clear_file_contents('round_details_3stage.txt')
-    num_rounds = 100
-    num_of_bits = 100
+    num_rounds = 1000
+    num_of_bits = 200
 
     # Assuming quantum_channels is already populated with QuantumChannel objects
     for channel in quantum_channels:
-        print(channel.name)  # or use the appropriate attribute/method to get the channel's name
+        print(f"channels -- {channel.name}")  # or use the appropriate attribute/method to get the channel's name
 
     # Assuming qkd_nodes contains all the nodes, including Alice and Bob
     for i, node in enumerate(qkd_nodes):
@@ -292,6 +293,7 @@ def test_3stage_protocol(distance, setup_network):
         if qc:
             # Set distance for all the channels
             qc.__setattr__("distance", distance)
+            qc.__setattr__("attenuation", attenuation)
 
     if counter == 0:
         # Now, handle the attenuation separately for 2nd to last channels
@@ -329,4 +331,4 @@ def test_3stage_protocol(distance, setup_network):
         alice.protocols[0].decoding()
         alice.protocols[0].begin_classical_communication()
 
-    alice.protocols[0].end_of_round(distance * 6, num_rounds)
+    alice.protocols[0].end_of_round(distance * 6, num_rounds, attenuation)
