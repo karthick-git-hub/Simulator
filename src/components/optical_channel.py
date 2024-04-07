@@ -17,7 +17,7 @@ from qiskit.circuit.library import UnitaryGate
 from qiskit_aer.noise import QuantumError
 from qiskit_aer.noise.errors import amplitude_damping_error
 
-from protocol import StackProtocol
+from ..protocol import StackProtocol
 
 if TYPE_CHECKING:
     from ..kernel.timeline import Timeline
