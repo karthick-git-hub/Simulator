@@ -329,9 +329,10 @@ class COWProtocol(StackProtocol):
             file.write(f"Round {round_number}: ")
             file.write(json.dumps(details) + '\n')
 
-    def end_of_round(self, distance, num_rounds, file_name='round_details.txt', output_file='result.txt'):
+    def end_of_round(self, distance, num_rounds, attenuation, file_name='round_details.txt', output_file='result.json'):
         total_sifting_percentage = 0
         total_key_rate = 0
+
         # Read and process each line in the input file
         with open(file_name, 'r') as file:
             for line in file:
@@ -351,14 +352,18 @@ class COWProtocol(StackProtocol):
             average_sifting_percentage = 0
             average_key_rate = 0
 
-        # Load the existing results and update or add the new entry for the given distance
+        # Load the existing results and update or add the new entry for the given distance and attenuation
         try:
             with open(output_file, 'r') as outfile:
                 existing_results = json.load(outfile)
         except (FileNotFoundError, json.JSONDecodeError):
             existing_results = {}
 
-        existing_results[str(distance)] = {
+        # If the attenuation key doesn't exist, create it
+        if str(attenuation) not in existing_results:
+            existing_results[str(attenuation)] = {}
+
+        existing_results[str(attenuation)][str(distance)] = {
             'average_sifting_percentage': average_sifting_percentage,
             'average_key_rate': average_key_rate
         }
@@ -367,5 +372,5 @@ class COWProtocol(StackProtocol):
         with open(output_file, 'w') as outfile:
             json.dump(existing_results, outfile, indent=4)
 
-        print(f"Average Sifting Percentage: {average_sifting_percentage}")
-        print(f"Average Key Rate: {average_key_rate}")
+        print(f"Average Sifting Percentage: {average_sifting_percentage} for attenuation {attenuation}")
+        print(f"Average Key Rate: {average_key_rate} for attenuation {attenuation}")
