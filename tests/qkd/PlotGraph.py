@@ -51,5 +51,5 @@ def plot_graphs(file_path):
 
 
 # Usage example
-file_path = 'C:\\Karthick\\Temp\\test\\tests\\qkd\\Images\\100_bits_100_rounds\\3-stage\\0.05-attenuation\\result_3stage.txt'  # Path to the result file
+file_path = 'result_3stage.txt'  # Path to the result file
 plot_graphs(file_path)
