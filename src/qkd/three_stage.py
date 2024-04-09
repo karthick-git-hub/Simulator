@@ -288,7 +288,12 @@ class ThreeStageProtocol(StackProtocol):
             file.write(f"Round {round_number}: ")
             file.write(json.dumps(details) + '\n')
 
-    def end_of_round(self, distance, num_rounds, file_name='round_details_3stage.txt', output_file='result_3stage.txt'):
+
+
+
+
+
+    def end_of_round(self, distance, num_rounds, attenuation, file_name='round_details_3stage.txt', output_file='result_3stage.txt'):
         total_sifting_percentage = 0
         total_key_rate = 0
         # Read and process each line in the input file
@@ -317,7 +322,11 @@ class ThreeStageProtocol(StackProtocol):
         except (FileNotFoundError, json.JSONDecodeError):
             existing_results = {}
 
-        existing_results[str(distance)] = {
+        # If the attenuation key doesn't exist, create it
+        if str(attenuation) not in existing_results:
+            existing_results[str(attenuation)] = {}
+
+        existing_results[str(attenuation)][str(distance)] = {
             'average_sifting_percentage': average_sifting_percentage,
             'average_key_rate': average_key_rate
         }
@@ -326,5 +335,5 @@ class ThreeStageProtocol(StackProtocol):
         with open(output_file, 'w') as outfile:
             json.dump(existing_results, outfile, indent=4)
 
-        print(f"Average Sifting Percentage: {average_sifting_percentage}")
-        print(f"Average Key Rate: {average_key_rate}")
+        print(f"Average Sifting Percentage: {average_sifting_percentage} for attenuation {attenuation}")
+        print(f"Average Key Rate: {average_key_rate} for attenuation {attenuation}")
