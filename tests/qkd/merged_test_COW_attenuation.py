@@ -171,8 +171,11 @@ def setup_network():
     global quantum_channels, qkd_nodes, tl, counter
 
     topology = 'grid'
-    matrix_size = 4
-    nodes_count = get_nodes(topology, matrix_size)
+    matrix_size = 0
+    if matrix_size == 0:
+        nodes_count = 0
+    else:
+        nodes_count = get_nodes(topology, matrix_size)
 
     if not qkd_nodes:
         qkd_nodes = [QKDNode(f"Node{i}", tl, stack_size=3) for i in range(nodes_count)]
