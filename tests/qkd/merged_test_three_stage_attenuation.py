@@ -22,7 +22,7 @@ qkd_nodes = []
 tl = Timeline(1e12)
 tl.seed(1)
 counter = 0
-attenuation_values = [0.1, 0.15]
+attenuation_values = [0.1, 0.15, 0.5]
 
 class Parent(Protocol):
     def __init__(self, own, length, name):
@@ -218,6 +218,7 @@ def setup_network():
             channel_counter += 1
 
 
+
 def draw_network_diagram(nodes, edges, title, file_name, repeater_nodes=None):
     # Create a directed graph
     G = nx.DiGraph()
@@ -258,12 +259,12 @@ def draw_network_diagram(nodes, edges, title, file_name, repeater_nodes=None):
     plt.close()
 
 @pytest.mark.parametrize("attenuation", attenuation_values)
-@pytest.mark.parametrize("distance", range(32, 52, 2))
+@pytest.mark.parametrize("distance", range(1, 52, 5))
 def test_3stage_protocol(setup_network, distance, attenuation):
     global quantum_channels, qkd_nodes, tl, counter
     clear_file_contents('round_details_3stage.txt')
-    num_rounds = 100
-    num_of_bits = 100
+    num_rounds = 1000
+    num_of_bits = 200
 
     # Assuming quantum_channels is already populated with QuantumChannel objects
     for channel in quantum_channels:

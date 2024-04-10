@@ -288,11 +288,6 @@ class ThreeStageProtocol(StackProtocol):
             file.write(f"Round {round_number}: ")
             file.write(json.dumps(details) + '\n')
 
-
-
-
-
-
     def end_of_round(self, distance, num_rounds, attenuation, file_name='round_details_3stage.txt', output_file='result_3stage.txt'):
         total_sifting_percentage = 0
         total_key_rate = 0
