@@ -1,0 +1,308 @@
+{
+    "0.1": {
+        "18": {
+            "average_sifting_percentage": 57.144444444444446,
+            "average_key_rate": 0.38654545454545475
+        },
+        "54": {
+            "average_sifting_percentage": 63.83827137102999,
+            "average_key_rate": 0.2783181818181819
+        },
+        "90": {
+            "average_sifting_percentage": 65.68434155783231,
+            "average_key_rate": 0.21283116883116887
+        },
+        "126": {
+            "average_sifting_percentage": 63.167065864898696,
+            "average_key_rate": 0.1603636363636363
+        },
+        "162": {
+            "average_sifting_percentage": 62.45099656922507,
+            "average_key_rate": 0.12206293706293707
+        },
+        "198": {
+            "average_sifting_percentage": 61.81143727813072,
+            "average_key_rate": 0.09338636363636367
+        },
+        "234": {
+            "average_sifting_percentage": 63.770565439662214,
+            "average_key_rate": 0.07006698564593301
+        },
+        "270": {
+            "average_sifting_percentage": 63.557054070841616,
+            "average_key_rate": 0.05329338842975207
+        },
+        "306": {
+            "average_sifting_percentage": 63.927675392240616,
+            "average_key_rate": 0.0401272727272727
+        },
+        "342": {
+            "average_sifting_percentage": 63.98098937182529,
+            "average_key_rate": 0.029935064935064936
+        },
+        "378": {
+            "average_sifting_percentage": 64.91769988697234,
+            "average_key_rate": 0.022979472140762472
+        },
+        "414": {
+            "average_sifting_percentage": 63.14435735832797,
+            "average_key_rate": 0.01677540106951871
+        },
+        "450": {
+            "average_sifting_percentage": 64.8947718947719,
+            "average_key_rate": 0.012896805896805898
+        },
+        "486": {
+            "average_sifting_percentage": 63.430050505050524,
+            "average_key_rate": 0.010206818181818183
+        },
+        "522": {
+            "average_sifting_percentage": 61.307539682539684,
+            "average_key_rate": 0.007384778012684988
+        },
+		"576": {
+            "average_sifting_percentage": 50.0,
+            "average_key_rate": 0.0048181818181818195
+        },
+        "612": {
+            "average_sifting_percentage": 60.0,
+            "average_key_rate": 0.0027878787878787893
+        },
+        "648": {
+            "average_sifting_percentage": 66.0,
+            "average_key_rate": 0.0023272727272727277
+        },
+        "684": {
+            "average_sifting_percentage": 70.0,
+            "average_key_rate": 0.0016623376623376626
+        },
+        "720": {
+            "average_sifting_percentage": 62.0,
+            "average_key_rate": 0.001404040404040405
+        },
+        "756": {
+            "average_sifting_percentage": 67.0,
+            "average_key_rate": 0.0009256198347107439
+        },
+        "792": {
+            "average_sifting_percentage": 58.0,
+            "average_key_rate": 0.0005874125874125876
+        },
+        "828": {
+            "average_sifting_percentage": 52.0,
+            "average_key_rate": 0.0005939393939393936
+        },
+        "864": {
+            "average_sifting_percentage": 55.0,
+            "average_key_rate": 0.00046524064171122974
+        },
+        "900": {
+            "average_sifting_percentage": 55.0,
+            "average_key_rate": 0.00016746411483253585
+        }
+    },
+    "0.15": {
+        "18": {
+            "average_sifting_percentage": 62.32165032679739,
+            "average_key_rate": 0.3366363636363636
+        },
+        "54": {
+            "average_sifting_percentage": 64.38351557127416,
+            "average_key_rate": 0.2269272727272728
+        },
+        "90": {
+            "average_sifting_percentage": 64.53708715943141,
+            "average_key_rate": 0.1477386363636364
+        },
+        "126": {
+            "average_sifting_percentage": 64.68116616600126,
+            "average_key_rate": 0.09641322314049586
+        },
+        "162": {
+            "average_sifting_percentage": 62.25099484039987,
+            "average_key_rate": 0.0634090909090909
+        },
+        "198": {
+            "average_sifting_percentage": 62.34345729519882,
+            "average_key_rate": 0.042390374331550816
+        },
+        "234": {
+            "average_sifting_percentage": 65.03166833166837,
+            "average_key_rate": 0.028345454545454545
+        },
+        "270": {
+            "average_sifting_percentage": 64.50429292929293,
+            "average_key_rate": 0.01926877470355731
+        },
+        "306": {
+            "average_sifting_percentage": 61.33412698412699,
+            "average_key_rate": 0.012496503496503495
+        },
+        "342": {
+            "average_sifting_percentage": 63.42380952380952,
+            "average_key_rate": 0.00823510971786834
+        },
+        "378": {
+            "average_sifting_percentage": 64.81666666666666,
+            "average_key_rate": 0.005556818181818184
+        },
+        "414": {
+            "average_sifting_percentage": 64.99999999999999,
+            "average_key_rate": 0.0035298701298701316
+        },
+        "450": {
+            "average_sifting_percentage": 67.0,
+            "average_key_rate": 0.0023684210526315795
+        },
+        "486": {
+            "average_sifting_percentage": 53.83333333333333,
+            "average_key_rate": 0.0015698447893569842
+        },
+        "522": {
+            "average_sifting_percentage": 61.5,
+            "average_key_rate": 0.0011239669421487602
+        },
+		"576": {
+            "average_sifting_percentage": 13.0,
+            "average_key_rate": 4.545454545454545e-05
+        },
+        "612": {
+            "average_sifting_percentage": 8.0,
+            "average_key_rate": 2.2727272727272726e-05
+        },
+        "648": {
+            "average_sifting_percentage": 19.0,
+            "average_key_rate": 3.0303030303030302e-05
+        },
+        "684": {
+            "average_sifting_percentage": 15.0,
+            "average_key_rate": 1.1363636363636363e-05
+        },
+        "720": {
+            "average_sifting_percentage": 10.0,
+            "average_key_rate": 2.7272727272727276e-05
+        },
+        "756": {
+            "average_sifting_percentage": 9.0,
+            "average_key_rate": 0.0
+        },
+        "792": {
+            "average_sifting_percentage": 8.0,
+            "average_key_rate": 0.0
+        },
+        "828": {
+            "average_sifting_percentage": 6.0,
+            "average_key_rate": 1.1363636363636363e-05
+        },
+        "864": {
+            "average_sifting_percentage": 5.0,
+            "average_key_rate": 5.050505050505051e-06
+        },
+        "900": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        }
+    },
+    "0.5": {
+        "18": {
+            "average_sifting_percentage": 62.80835488041371,
+            "average_key_rate": 0.20063636363636367
+        },
+        "54": {
+            "average_sifting_percentage": 66.20396825396824,
+            "average_key_rate": 0.05487878787878789
+        },
+        "90": {
+            "average_sifting_percentage": 61.24999999999999,
+            "average_key_rate": 0.013313131313131308
+        },
+        "126": {
+            "average_sifting_percentage": 67.0,
+            "average_key_rate": 0.0035530303030302996
+        },
+        "162": {
+            "average_sifting_percentage": 62.0,
+            "average_key_rate": 0.0007151515151515146
+        },
+        "198": {
+            "average_sifting_percentage": 37.0,
+            "average_key_rate": 6.060606060606059e-05
+        },
+        "234": {
+            "average_sifting_percentage": 17.0,
+            "average_key_rate": 8.658008658008657e-06
+        },
+        "270": {
+            "average_sifting_percentage": 4.0,
+            "average_key_rate": 0.0
+        },
+        "306": {
+            "average_sifting_percentage": 3.0,
+            "average_key_rate": 0.0
+        },
+        "342": {
+            "average_sifting_percentage": 1.0,
+            "average_key_rate": 0.0
+        },
+        "378": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "414": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "450": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "486": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "522": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+		"576": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "612": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "648": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "684": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "720": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "756": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "792": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "828": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "864": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        },
+        "900": {
+            "average_sifting_percentage": 0.0,
+            "average_key_rate": 0.0
+        }
+    }
+}
