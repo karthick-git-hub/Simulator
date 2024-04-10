@@ -3,7 +3,7 @@ import json
 from scipy.signal import savgol_filter
 
 # Path to the JSON-formatted text file
-file_path = 'cow/0.1-attenuation/result.txt'
+file_path = 'Images/100_bits_100_rounds/cow/0.1-attenuation/result.txt'
 
 # Load data from the text file
 with open(file_path, 'r') as file:
@@ -40,7 +40,7 @@ processed_data = {
 }
 
 # Save the processed data to a JSON file
-output_file_path = 'cow/0.1-attenuation/processed_3stage.json'
+output_file_path = 'Images/100_bits_100_rounds/cow/0.1-attenuation/processed_3stage.json'
 with open(output_file_path, 'w') as file:
     json.dump(processed_data, file, indent=4)
 
